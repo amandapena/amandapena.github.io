@@ -3,352 +3,223 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Your family's AI planning assistant — reduce mental load and stay on top of everything.">
+  <meta name="description" content="Family AI planning assistant with shared conversations and email integration.">
   <meta name="theme-color" content="#F7F2EB">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
   <title>Lumi — Family Planner</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#F7F2EB;--white:#FFF;--text:#1A1A1A;--text-mid:#666;--text-light:#AAA;
+      --border:#E5DDD4;--shadow-sm:0 1px 4px rgba(0,0,0,.07);--shadow-md:0 4px 16px rgba(0,0,0,.1);
+      --accent:#E8634A;--accent-dark:#C44D32;
+      --tag-green-bg:#D6EDD6;--tag-green:#2E6B2E;--tag-amber-bg:#FDF0CC;--tag-amber:#92600A;
+      --tag-pink-bg:#FBDDE3;--tag-pink:#A3213A;--tag-blue-bg:#DCF0FD;--tag-blue:#1059A0;
+      --tag-purple-bg:#EDE5FB;--tag-purple:#5B21B6;--tag-gray-bg:#ECEAE6;--tag-gray:#555;
+    }
+    html,body{height:100%;height:100dvh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    .screen{position:fixed;inset:0;display:flex;flex-direction:column}.screen.hidden{display:none}
 
-    :root {
-      --bg: #F7F2EB;
-      --white: #FFFFFF;
-      --text: #1A1A1A;
-      --text-mid: #666666;
-      --text-light: #AAAAAA;
-      --border: #E5DDD4;
-      --shadow-sm: 0 1px 4px rgba(0,0,0,0.07);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
-      --accent: #E8634A;
-      --accent-dark: #C44D32;
-      --tag-green-bg: #D6EDD6; --tag-green: #2E6B2E;
-      --tag-amber-bg: #FDF0CC; --tag-amber: #92600A;
-      --tag-pink-bg: #FBDDE3;  --tag-pink: #A3213A;
-      --tag-blue-bg: #DCF0FD;  --tag-blue: #1059A0;
-      --tag-purple-bg: #EDE5FB; --tag-purple: #5B21B6;
-      --tag-gray-bg: #ECEAE6;  --tag-gray: #555555;
-    }
+    /* ── SHARED FORM STYLES ── */
+    .card{background:var(--white);border-radius:28px;padding:36px 28px 28px;max-width:440px;width:100%;box-shadow:var(--shadow-md)}
+    .card-logo{font-size:52px;text-align:center;margin-bottom:10px;line-height:1}
+    .card-title{font-size:24px;font-weight:800;text-align:center;letter-spacing:-.5px;margin-bottom:6px}
+    .card-sub{font-size:14px;color:var(--text-mid);text-align:center;line-height:1.6;margin-bottom:24px}
+    .sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-light);margin-bottom:8px;margin-top:18px}
+    .field-group{display:flex;flex-direction:column;gap:10px}
+    .field-row{display:flex;gap:10px}.field-row .inp{flex:1}
+    .inp{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:14px;font-size:15px;font-family:inherit;background:#FAFAF8;outline:none;color:var(--text);transition:border-color .18s,background .18s}
+    .inp:focus{border-color:var(--accent);background:var(--white)}.inp::placeholder{color:#BBB}
+    .inp-area{resize:none;height:100px;line-height:1.5;font-size:13px;font-family:monospace}
+    .hint{font-size:12px;color:var(--text-light);margin-top:5px;line-height:1.5}.hint a{color:var(--accent);text-decoration:none}
+    .btn{width:100%;padding:16px;background:var(--accent);color:white;border:none;border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;transition:background .18s,transform .1s;margin-top:16px}
+    .btn:hover{background:var(--accent-dark)}.btn:active{transform:scale(.98)}.btn:disabled{background:#D5CEC7;cursor:default}
+    .btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent)}.btn-outline:hover{background:var(--accent);color:white}
+    .btn-google{background:var(--white);color:var(--text);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600}
+    .btn-google:hover{background:#F5F5F5}
+    .btn-sm{padding:12px;font-size:14px;margin-top:10px}
+    .fine-print{font-size:12px;color:var(--text-light);text-align:center;margin-top:14px;line-height:1.6}
+    .or-divider{text-align:center;color:var(--text-light);font-size:13px;margin:14px 0;position:relative}
+    .or-divider::before,.or-divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border)}
+    .or-divider::before{left:0}.or-divider::after{right:0}
+    .user-badge{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#F5F3EF;border-radius:14px;margin-bottom:16px}
+    .user-badge img{width:32px;height:32px;border-radius:50%}
+    .user-badge .ub-name{font-weight:600;font-size:14px}.user-badge .ub-email{font-size:12px;color:var(--text-light)}
+    .step-list{font-size:13px;color:var(--text-mid);line-height:1.8;padding-left:20px;margin-bottom:16px}
+    .step-list li{margin-bottom:4px}
+    .join-code{font-size:28px;font-weight:800;letter-spacing:4px;text-align:center;padding:16px;background:#F5F3EF;border-radius:14px;margin:12px 0;color:var(--accent);font-family:monospace}
+    .error-msg{color:#B91C1C;font-size:13px;margin-top:8px;text-align:center}
 
-    html, body {
-      height: 100%; height: 100dvh;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .screen { position: fixed; inset: 0; display: flex; flex-direction: column; }
-    .screen.hidden { display: none; }
-
-    /* ── SETUP ── */
-    #setup-screen {
-      background: var(--bg); align-items: center; justify-content: center;
-      padding: 24px 20px; overflow-y: auto;
-    }
-    .setup-card {
-      background: var(--white); border-radius: 28px;
-      padding: 36px 28px 28px; max-width: 420px; width: 100%;
-      box-shadow: var(--shadow-md);
-    }
-    .setup-logo { font-size: 52px; text-align: center; margin-bottom: 10px; line-height: 1; }
-    .setup-title { font-size: 26px; font-weight: 800; text-align: center; letter-spacing: -0.5px; margin-bottom: 6px; }
-    .setup-subtitle { font-size: 14px; color: var(--text-mid); text-align: center; line-height: 1.6; margin-bottom: 28px; }
-    .setup-section-label {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.8px; color: var(--text-light); margin-bottom: 10px; margin-top: 20px;
-    }
-    .field-group { display: flex; flex-direction: column; gap: 10px; }
-    .field-row { display: flex; gap: 10px; }
-    .field-row .setup-input { flex: 1; }
-    .setup-input {
-      width: 100%; padding: 13px 16px; border: 1.5px solid var(--border);
-      border-radius: 14px; font-size: 15px; font-family: inherit;
-      background: #FAFAF8; outline: none; color: var(--text);
-      transition: border-color 0.18s, background 0.18s;
-    }
-    .setup-input:focus { border-color: var(--accent); background: var(--white); }
-    .setup-input::placeholder { color: #BBBBBB; }
-    .api-hint { font-size: 12px; color: var(--text-light); margin-top: 5px; line-height: 1.5; }
-    .api-hint a { color: var(--accent); text-decoration: none; }
-    .setup-btn {
-      width: 100%; padding: 16px; background: var(--accent); color: white; border: none;
-      border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer;
-      margin-top: 24px; font-family: inherit; letter-spacing: -0.2px;
-      transition: background 0.18s, transform 0.1s;
-    }
-    .setup-btn:hover { background: var(--accent-dark); }
-    .setup-btn:active { transform: scale(0.98); }
-    .setup-fine-print { font-size: 12px; color: var(--text-light); text-align: center; margin-top: 14px; line-height: 1.6; }
+    /* ── CENTERED SCREEN ── */
+    .center-screen{background:var(--bg);align-items:center;justify-content:center;padding:24px 20px;overflow-y:auto}
 
     /* ── APP ── */
-    #app-screen { display: flex; flex-direction: column; background: var(--bg); }
+    #app-screen{display:flex;flex-direction:column;background:var(--bg)}
+    .app-header{background:var(--white);border-bottom:1px solid var(--border);padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:10}
+    .header-identity{display:flex;align-items:center;gap:10px}
+    .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#F4A261 0%,#E8634A 100%);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .header-text .name{font-size:16px;font-weight:700;letter-spacing:-.2px;line-height:1.2}
+    .header-text .status{font-size:11px;color:#22C55E;display:flex;align-items:center;gap:4px}
+    .status-dot{width:6px;height:6px;background:#22C55E;border-radius:50%}
+    .header-actions{display:flex;gap:6px}
+    .icon-btn{width:38px;height:38px;border:none;background:#F0EBE4;border-radius:50%;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+    .icon-btn:hover{background:var(--border)}
+    .user-avatar-sm{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid var(--border)}
 
-    .app-header {
-      background: var(--white); border-bottom: 1px solid var(--border);
-      padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
-      display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0; z-index: 10;
-    }
-    .header-identity { display: flex; align-items: center; gap: 10px; }
-    .avatar {
-      width: 40px; height: 40px; border-radius: 50%;
-      background: linear-gradient(135deg, #F4A261 0%, #E8634A 100%);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; flex-shrink: 0;
-    }
-    .header-text .name { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; line-height: 1.2; }
-    .header-text .status { font-size: 11px; color: #22C55E; display: flex; align-items: center; gap: 4px; }
-    .status-dot { width: 6px; height: 6px; background: #22C55E; border-radius: 50%; }
-    .header-actions { display: flex; gap: 6px; }
-    .icon-btn {
-      width: 38px; height: 38px; border: none; background: #F0EBE4;
-      border-radius: 50%; cursor: pointer; font-size: 17px;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s;
-    }
-    .icon-btn:hover { background: var(--border); }
+    /* Thread tabs */
+    .thread-tabs{background:var(--white);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:8px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+    .thread-tabs::-webkit-scrollbar{display:none}
+    .t-tab{white-space:nowrap;padding:7px 14px;border-radius:20px;border:2px solid transparent;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:filter .15s,transform .1s;letter-spacing:-.1px;opacity:.7}
+    .t-tab:active{transform:scale(.95)}.t-tab.active{opacity:1;border-color:currentColor}
+    .t-chat{background:var(--tag-gray-bg);color:var(--tag-gray)}
+    .t-briefing{background:var(--tag-pink-bg);color:var(--tag-pink)}
+    .t-school{background:var(--tag-green-bg);color:var(--tag-green)}
+    .t-todos{background:var(--tag-blue-bg);color:var(--tag-blue)}
+    .t-remind{background:var(--tag-amber-bg);color:var(--tag-amber)}
+    .t-share{background:var(--tag-purple-bg);color:var(--tag-purple)}
+    .t-inbox{background:#FFF3E0;color:#E65100}
 
-    /* ── THREAD TABS ── */
-    .thread-tabs {
-      background: var(--white); border-bottom: 1px solid var(--border);
-      padding: 10px 14px; display: flex; gap: 8px;
-      overflow-x: auto; flex-shrink: 0; scrollbar-width: none;
-    }
-    .thread-tabs::-webkit-scrollbar { display: none; }
-    .t-tab {
-      white-space: nowrap; padding: 7px 14px; border-radius: 20px;
-      border: 2px solid transparent; font-size: 13px; font-weight: 600;
-      cursor: pointer; font-family: inherit;
-      transition: filter 0.15s, transform 0.1s;
-      letter-spacing: -0.1px; opacity: 0.7;
-    }
-    .t-tab:active { transform: scale(0.95); }
-    .t-tab.active { opacity: 1; border-color: currentColor; }
-    .t-chat     { background: var(--tag-gray-bg); color: var(--tag-gray); }
-    .t-briefing { background: var(--tag-pink-bg); color: var(--tag-pink); }
-    .t-school   { background: var(--tag-green-bg); color: var(--tag-green); }
-    .t-todos    { background: var(--tag-blue-bg); color: var(--tag-blue); }
-    .t-remind   { background: var(--tag-amber-bg); color: var(--tag-amber); }
-    .t-share    { background: var(--tag-purple-bg); color: var(--tag-purple); }
+    /* Chat */
+    .chat-area{flex:1;overflow-y:auto;padding:16px 14px 8px;display:flex;flex-direction:column;scroll-behavior:smooth}
+    .chat-area::-webkit-scrollbar{width:3px}.chat-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+    .welcome-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding:32px 16px}
+    .welcome-emoji{font-size:52px;margin-bottom:12px}.welcome-title{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+    .welcome-body{font-size:14px;color:var(--text-mid);line-height:1.6;max-width:280px;margin-bottom:20px}
+    .suggestion-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:340px}
+    .suggestion-chip{padding:8px 14px;background:var(--white);border:1.5px solid var(--border);border-radius:18px;font-size:13px;color:var(--text-mid);cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s}
+    .suggestion-chip:hover{background:var(--bg);border-color:var(--accent);color:var(--text)}
 
-    /* ── CHAT AREA ── */
-    .chat-area {
-      flex: 1; overflow-y: auto; padding: 16px 14px 8px;
-      display: flex; flex-direction: column; scroll-behavior: smooth;
-    }
-    .chat-area::-webkit-scrollbar { width: 3px; }
-    .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .msg-group{display:flex;flex-direction:column;margin-bottom:10px}
+    .msg-group.user{align-items:flex-end}.msg-group.ai{align-items:flex-start}
+    .msg-sender-name{font-size:11px;color:var(--text-light);margin-bottom:4px;padding:0 6px}
+    .msg-bubble{max-width:82%;padding:11px 15px;border-radius:20px;font-size:15px;line-height:1.45;word-break:break-word;white-space:pre-wrap;margin-bottom:2px}
+    .msg-group.user .msg-bubble{background:var(--accent);color:white;border-bottom-right-radius:5px}
+    .msg-group.user .msg-bubble:last-of-type{border-bottom-right-radius:20px}
+    .msg-group.ai .msg-bubble{background:var(--white);color:var(--text);border-bottom-left-radius:5px;box-shadow:var(--shadow-sm)}
+    .msg-group.ai .msg-bubble:last-of-type{border-bottom-left-radius:20px}
+    .search-note{font-size:12px;color:var(--tag-blue);background:var(--tag-blue-bg);padding:4px 12px;border-radius:12px;margin-bottom:6px;display:inline-block;max-width:82%}
+    .sms-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--tag-green-bg);color:var(--tag-green);border:none;border-radius:16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px;transition:filter .15s}
+    .sms-btn:hover{filter:brightness(.95)}
+    .typing-group{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:10px}
+    .typing-dots{background:var(--white);border-radius:20px;border-bottom-left-radius:5px;padding:12px 16px;box-shadow:var(--shadow-sm);display:flex;gap:5px;align-items:center}
+    .searching-label{font-size:12px;color:var(--tag-blue);margin-top:4px;padding-left:4px}
+    .dot{width:8px;height:8px;background:#C8BFB6;border-radius:50%;animation:bounce 1.3s infinite ease-in-out}
+    .dot:nth-child(2){animation-delay:.18s}.dot:nth-child(3){animation-delay:.36s}
+    @keyframes bounce{0%,55%,100%{transform:translateY(0);opacity:.45}27%{transform:translateY(-7px);opacity:1}}
+    .error-bubble{background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA}
 
-    /* Welcome */
-    .welcome-state {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; flex: 1; text-align: center;
-      padding: 32px 16px; gap: 0;
-    }
-    .welcome-emoji { font-size: 52px; margin-bottom: 12px; }
-    .welcome-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
-    .welcome-body { font-size: 14px; color: var(--text-mid); line-height: 1.6; max-width: 280px; margin-bottom: 20px; }
-    .suggestion-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 340px; }
-    .suggestion-chip {
-      padding: 8px 14px; background: var(--white); border: 1.5px solid var(--border);
-      border-radius: 18px; font-size: 13px; color: var(--text-mid);
-      cursor: pointer; font-family: inherit; transition: background 0.15s, border-color 0.15s;
-    }
-    .suggestion-chip:hover { background: var(--bg); border-color: var(--accent); color: var(--text); }
+    .input-area{background:var(--white);border-top:1px solid var(--border);padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;align-items:flex-end;gap:10px;flex-shrink:0}
+    .input-box{flex:1;background:#F0EBE4;border-radius:22px;padding:10px 16px;display:flex;align-items:flex-end}
+    .msg-input{flex:1;border:none;background:transparent;font-size:15px;font-family:inherit;outline:none;resize:none;max-height:110px;line-height:1.45;color:var(--text)}
+    .msg-input::placeholder{color:#B5ACA3}
+    .send-btn{width:40px;height:40px;background:var(--accent);color:white;border:none;border-radius:50%;font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .1s;line-height:1}
+    .send-btn:hover{background:var(--accent-dark)}.send-btn:active{transform:scale(.92)}.send-btn:disabled{background:#D5CEC7;cursor:default}
 
-    /* Messages */
-    .msg-group { display: flex; flex-direction: column; margin-bottom: 10px; }
-    .msg-group.user { align-items: flex-end; }
-    .msg-group.ai   { align-items: flex-start; }
-    .msg-sender-name { font-size: 11px; color: var(--text-light); margin-bottom: 4px; padding: 0 6px; }
-    .msg-bubble {
-      max-width: 82%; padding: 11px 15px; border-radius: 20px;
-      font-size: 15px; line-height: 1.45; word-break: break-word;
-      white-space: pre-wrap; margin-bottom: 2px;
-    }
-    .msg-group.user .msg-bubble {
-      background: var(--accent); color: white; border-bottom-right-radius: 5px;
-    }
-    .msg-group.user .msg-bubble:last-of-type { border-bottom-right-radius: 20px; }
-    .msg-group.ai .msg-bubble {
-      background: var(--white); color: var(--text);
-      border-bottom-left-radius: 5px; box-shadow: var(--shadow-sm);
-    }
-    .msg-group.ai .msg-bubble:last-of-type { border-bottom-left-radius: 20px; }
+    /* Settings */
+    .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:200;display:flex;flex-direction:column;justify-content:flex-end;backdrop-filter:blur(2px)}
+    .sheet-overlay.hidden{display:none}
+    .sheet{background:var(--white);border-radius:26px 26px 0 0;padding:20px 24px 32px;padding-bottom:max(32px,calc(env(safe-area-inset-bottom) + 16px));max-height:90vh;overflow-y:auto}
+    .sheet-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 22px}
+    .sheet-title{font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:22px}
+    .sheet-section{margin-bottom:22px}
+    .sheet-action-btn{width:100%;padding:14px;border:none;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px;transition:filter .15s}
+    .btn-save{background:var(--accent);color:white}.btn-save:hover{background:var(--accent-dark)}
+    .btn-danger{background:#FEE2E2;color:#B91C1C;margin-top:8px}.btn-danger:hover{filter:brightness(.96)}
+    .btn-secondary{background:var(--tag-gray-bg);color:var(--tag-gray);margin-top:8px}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+    .toggle-label{font-size:14px}.toggle-hint{font-size:12px;color:var(--text-light)}
+    .toggle-switch{width:48px;height:28px;border-radius:14px;border:none;background:#D5CEC7;cursor:pointer;position:relative;transition:background .2s}
+    .toggle-switch.on{background:#22C55E}
+    .toggle-switch::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:white;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s}
+    .toggle-switch.on::after{left:23px}
+    .model-select{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:14px;font-size:15px;font-family:inherit;background:#FAFAF8;color:var(--text);outline:none;appearance:none;cursor:pointer}
+    .settings-textarea{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:14px;font-size:14px;font-family:inherit;background:#FAFAF8;color:var(--text);outline:none;resize:none;height:88px;line-height:1.5}
 
-    /* Search indicator */
-    .search-note {
-      font-size: 12px; color: var(--tag-blue); background: var(--tag-blue-bg);
-      padding: 4px 12px; border-radius: 12px; margin-bottom: 6px;
-      display: inline-block; max-width: 82%;
-    }
-
-    /* SMS share button */
-    .sms-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px; background: var(--tag-green-bg); color: var(--tag-green);
-      border: none; border-radius: 16px; font-size: 13px; font-weight: 600;
-      cursor: pointer; font-family: inherit; margin-top: 6px;
-      transition: filter 0.15s;
-    }
-    .sms-btn:hover { filter: brightness(0.95); }
-
-    /* Typing */
-    .typing-group { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
-    .typing-dots {
-      background: var(--white); border-radius: 20px; border-bottom-left-radius: 5px;
-      padding: 12px 16px; box-shadow: var(--shadow-sm);
-      display: flex; gap: 5px; align-items: center;
-    }
-    .searching-label {
-      font-size: 12px; color: var(--tag-blue); margin-top: 4px; padding-left: 4px;
-    }
-    .dot { width: 8px; height: 8px; background: #C8BFB6; border-radius: 50%; animation: bounce 1.3s infinite ease-in-out; }
-    .dot:nth-child(2) { animation-delay: 0.18s; }
-    .dot:nth-child(3) { animation-delay: 0.36s; }
-    @keyframes bounce {
-      0%, 55%, 100% { transform: translateY(0); opacity: 0.45; }
-      27% { transform: translateY(-7px); opacity: 1; }
-    }
-
-    .error-bubble { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
-
-    /* Input */
-    .input-area {
-      background: var(--white); border-top: 1px solid var(--border);
-      padding: 10px 14px; padding-bottom: max(10px, env(safe-area-inset-bottom));
-      display: flex; align-items: flex-end; gap: 10px; flex-shrink: 0;
-    }
-    .input-box { flex: 1; background: #F0EBE4; border-radius: 22px; padding: 10px 16px; display: flex; align-items: flex-end; }
-    .msg-input {
-      flex: 1; border: none; background: transparent; font-size: 15px;
-      font-family: inherit; outline: none; resize: none;
-      max-height: 110px; line-height: 1.45; color: var(--text);
-    }
-    .msg-input::placeholder { color: #B5ACA3; }
-    .send-btn {
-      width: 40px; height: 40px; background: var(--accent); color: white;
-      border: none; border-radius: 50%; font-size: 20px; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; transition: background 0.15s, transform 0.1s; line-height: 1;
-    }
-    .send-btn:hover { background: var(--accent-dark); }
-    .send-btn:active { transform: scale(0.92); }
-    .send-btn:disabled { background: #D5CEC7; cursor: default; }
-
-    /* ── SETTINGS ── */
-    .sheet-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.38); z-index: 200;
-      display: flex; flex-direction: column; justify-content: flex-end;
-      backdrop-filter: blur(2px);
-    }
-    .sheet-overlay.hidden { display: none; }
-    .sheet {
-      background: var(--white); border-radius: 26px 26px 0 0;
-      padding: 20px 24px 32px;
-      padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 16px));
-      max-height: 90vh; overflow-y: auto;
-    }
-    .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 22px; }
-    .sheet-title { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 22px; }
-    .sheet-section { margin-bottom: 22px; }
-    .sheet-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-light); margin-bottom: 10px; }
-    .sheet-field-group { display: flex; flex-direction: column; gap: 10px; }
-    .sheet-field-row { display: flex; gap: 10px; }
-    .sheet-field-row .setup-input { flex: 1; }
-    .sheet-action-btn {
-      width: 100%; padding: 14px; border: none; border-radius: 14px;
-      font-size: 15px; font-weight: 600; cursor: pointer;
-      font-family: inherit; margin-top: 6px; transition: filter 0.15s;
-    }
-    .btn-save { background: var(--accent); color: white; }
-    .btn-save:hover { background: var(--accent-dark); }
-    .btn-danger { background: #FEE2E2; color: #B91C1C; margin-top: 8px; }
-    .btn-danger:hover { filter: brightness(0.96); }
-    .model-select {
-      width: 100%; padding: 13px 16px; border: 1.5px solid var(--border);
-      border-radius: 14px; font-size: 15px; font-family: inherit;
-      background: #FAFAF8; color: var(--text); outline: none; appearance: none; cursor: pointer;
-    }
-    .model-select:focus { border-color: var(--accent); }
-    .settings-textarea {
-      width: 100%; padding: 13px 16px; border: 1.5px solid var(--border);
-      border-radius: 14px; font-size: 14px; font-family: inherit;
-      background: #FAFAF8; color: var(--text); outline: none;
-      resize: none; height: 88px; line-height: 1.5;
-    }
-    .settings-textarea:focus { border-color: var(--accent); background: var(--white); }
-    .toggle-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 6px 0;
-    }
-    .toggle-label { font-size: 14px; }
-    .toggle-hint { font-size: 12px; color: var(--text-light); }
-    .toggle-switch {
-      width: 48px; height: 28px; border-radius: 14px; border: none;
-      background: #D5CEC7; cursor: pointer; position: relative;
-      transition: background 0.2s;
-    }
-    .toggle-switch.on { background: #22C55E; }
-    .toggle-switch::after {
-      content: ''; position: absolute; top: 3px; left: 3px;
-      width: 22px; height: 22px; border-radius: 50%; background: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: left 0.2s;
-    }
-    .toggle-switch.on::after { left: 23px; }
-
-    .toast {
-      position: fixed; bottom: 90px; left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #1A1A1A; color: white; padding: 10px 20px;
-      border-radius: 20px; font-size: 14px; font-weight: 500;
-      z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s;
-      pointer-events: none; white-space: nowrap;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    @media (min-width: 480px) {
-      .setup-card { padding: 40px 36px 36px; }
-      .msg-bubble { max-width: 75%; }
-    }
+    .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:white;padding:10px 20px;border-radius:20px;font-size:14px;font-weight:500;z-index:300;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    @media(min-width:480px){.card{padding:40px 36px 36px}.msg-bubble{max-width:75%}}
   </style>
 </head>
 <body>
 
-<!-- SETUP -->
-<div id="setup-screen" class="screen">
-  <div class="setup-card">
-    <div class="setup-logo">🌿</div>
-    <h1 class="setup-title">Meet Lumi</h1>
-    <p class="setup-subtitle">Your family's AI planning assistant — catching what slips through the cracks so you don't have to hold it all in your head.</p>
-
-    <div class="setup-section-label">API Key</div>
-    <div class="field-group">
-      <input class="setup-input" type="password" id="s-api-key" placeholder="sk-ant-api03-...">
-      <p class="api-hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. Stored only in your browser.</p>
-    </div>
-
-    <div class="setup-section-label">Your Family</div>
-    <div class="field-group">
-      <div class="field-row">
-        <input class="setup-input" type="text" id="s-your-name" placeholder="Your name">
-        <input class="setup-input" type="text" id="s-partner-name" placeholder="Partner's name">
-      </div>
-      <input class="setup-input" type="text" id="s-partner-phone" placeholder="Partner's phone (for texting)">
-      <input class="setup-input" type="text" id="s-kids" placeholder="Kids' names & ages  (e.g. Emma 8, Jake 5)">
-    </div>
-
-    <div class="setup-section-label">Assistant Name <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
-    <input class="setup-input" type="text" id="s-assistant-name" placeholder="Lumi">
-
-    <button class="setup-btn" onclick="saveSetup()">Let's go →</button>
-    <p class="setup-fine-print">Free to use with your own API key. No account needed.</p>
+<!-- ═══ SCREEN 1: FIREBASE SETUP ═══ -->
+<div id="firebase-setup-screen" class="screen center-screen hidden">
+  <div class="card">
+    <div class="card-logo">🔧</div>
+    <h1 class="card-title">One-Time Setup</h1>
+    <p class="card-sub">To enable shared family access and email, you need a free Firebase project. Follow these steps (takes ~10 minutes):</p>
+    <ol class="step-list">
+      <li>Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a> and create a new project</li>
+      <li>In the project, go to <b>Authentication → Sign-in method</b> and enable <b>Google</b></li>
+      <li>Go to <b>Firestore Database</b> and click <b>Create Database</b> (start in test mode)</li>
+      <li>Go to <b>Project Settings → General</b>, scroll to "Your apps", click the web icon <b>&lt;/&gt;</b> and register an app</li>
+      <li>Copy the <code>firebaseConfig</code> object and paste it below</li>
+      <li>In <b>Authentication → Settings → Authorized domains</b>, add <code>amandapena.github.io</code></li>
+    </ol>
+    <div class="sec-label">Paste your Firebase config</div>
+    <textarea class="inp inp-area" id="fb-config-input" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
+    <p class="hint">Paste the JSON object from Firebase Console. This is not secret — it's designed for client-side apps.</p>
+    <div id="fb-setup-error" class="error-msg" style="display:none"></div>
+    <button class="btn" onclick="saveFbConfig()">Save & Continue →</button>
+    <p class="fine-print">Want to skip this? <a href="#" style="color:var(--accent)" onclick="enterLocalMode(event)">Use local-only mode</a> (no sharing or email)</p>
   </div>
 </div>
 
-<!-- APP -->
+<!-- ═══ SCREEN 2: SIGN IN ═══ -->
+<div id="signin-screen" class="screen center-screen hidden">
+  <div class="card">
+    <div class="card-logo">🌿</div>
+    <h1 class="card-title">Welcome to Lumi</h1>
+    <p class="card-sub">Sign in with your Google account to get started. Both you and your partner sign in here.</p>
+    <button class="btn btn-google" onclick="googleSignIn()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 2.58 9 2.58Z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="signin-error" class="error-msg" style="display:none"></div>
+    <p class="fine-print" style="margin-top:20px">Both parents sign in with their own Google account to share conversations and access email.</p>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 3: FAMILY SETUP ═══ -->
+<div id="family-screen" class="screen center-screen hidden">
+  <div class="card">
+    <div class="card-logo">👨‍👩‍👧‍👦</div>
+    <h1 class="card-title" id="family-screen-title">Set Up Your Family</h1>
+    <div id="family-user-badge" class="user-badge" style="display:none"></div>
+
+    <!-- Create family -->
+    <div id="family-create">
+      <div class="sec-label">Anthropic API Key</div>
+      <div class="field-group">
+        <input class="inp" type="password" id="f-api-key" placeholder="sk-ant-api03-...">
+        <p class="hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.</p>
+      </div>
+      <div class="sec-label">Your Family</div>
+      <div class="field-group">
+        <input class="inp" type="text" id="f-kids" placeholder="Kids' names & ages  (e.g. Emma 8, Jake 5)">
+        <input class="inp" type="text" id="f-partner-phone" placeholder="Partner's phone (for texting feature)">
+      </div>
+      <div class="sec-label">Assistant Name <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
+      <input class="inp" type="text" id="f-assistant-name" placeholder="Lumi">
+      <div class="sec-label">Partner's Email <span style="font-weight:400;text-transform:none;letter-spacing:0">(so they can join)</span></div>
+      <input class="inp" type="email" id="f-partner-email" placeholder="partner@gmail.com">
+      <button class="btn" onclick="createFamily()">Create Family →</button>
+    </div>
+
+    <!-- Join family (shown when family already exists) -->
+    <div id="family-join" style="display:none">
+      <p class="card-sub">You've been invited to join your family's Lumi! Tap below to join.</p>
+      <div id="family-join-info"></div>
+      <button class="btn" onclick="joinFamily()">Join Family →</button>
+    </div>
+
+    <div id="family-error" class="error-msg" style="display:none"></div>
+    <button class="btn btn-secondary btn-sm" onclick="signOutUser()">Sign out</button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 4: MAIN APP ═══ -->
 <div id="app-screen" class="screen hidden">
   <div class="app-header">
     <div class="header-identity">
@@ -360,138 +231,101 @@
     </div>
     <div class="header-actions">
       <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
+      <img class="user-avatar-sm" id="user-avatar" src="" alt="You" onclick="showUserMenu()" title="Account">
     </div>
   </div>
-
   <div class="thread-tabs" id="thread-tabs">
-    <button class="t-tab t-chat active"   data-thread="chat"     onclick="switchThread('chat')">💬 Chat</button>
-    <button class="t-tab t-briefing"       data-thread="briefing" onclick="switchThread('briefing')">📋 Daily briefing</button>
-    <button class="t-tab t-school"         data-thread="school"   onclick="switchThread('school')">🏫 School stuff</button>
-    <button class="t-tab t-todos"          data-thread="todos"    onclick="switchThread('todos')">✅ To-do list</button>
-    <button class="t-tab t-remind"         data-thread="remind"   onclick="switchThread('remind')">📅 Reminders</button>
-    <button class="t-tab t-share"          data-thread="share"    onclick="switchThread('share')">💌 Share with partner</button>
+    <button class="t-tab t-chat active" data-thread="chat" onclick="switchThread('chat')">💬 Chat</button>
+    <button class="t-tab t-inbox" data-thread="inbox" onclick="switchThread('inbox')">📧 Inbox</button>
+    <button class="t-tab t-briefing" data-thread="briefing" onclick="switchThread('briefing')">📋 Daily briefing</button>
+    <button class="t-tab t-school" data-thread="school" onclick="switchThread('school')">🏫 School stuff</button>
+    <button class="t-tab t-todos" data-thread="todos" onclick="switchThread('todos')">✅ To-do list</button>
+    <button class="t-tab t-remind" data-thread="remind" onclick="switchThread('remind')">📅 Reminders</button>
+    <button class="t-tab t-share" data-thread="share" onclick="switchThread('share')">💌 Share with partner</button>
   </div>
-
   <div class="chat-area" id="chat-area"></div>
-
   <div class="input-area">
-    <div class="input-box">
-      <textarea class="msg-input" id="msg-input" rows="1" placeholder="Message Lumi…"></textarea>
-    </div>
+    <div class="input-box"><textarea class="msg-input" id="msg-input" rows="1" placeholder="Message Lumi…"></textarea></div>
     <button class="send-btn" id="send-btn" onclick="sendMessage()" aria-label="Send">↑</button>
   </div>
 </div>
 
 <!-- SETTINGS -->
-<div class="sheet-overlay hidden" id="settings-overlay" onclick="overlayClick(event)">
+<div class="sheet-overlay hidden" id="settings-overlay" onclick="if(event.target===this)this.classList.add('hidden')">
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title">Settings</div>
-
-    <div class="sheet-section">
-      <div class="sheet-section-label">API Key</div>
-      <input class="setup-input" type="password" id="ss-api-key" placeholder="sk-ant-api03-...">
-    </div>
-
-    <div class="sheet-section">
-      <div class="sheet-section-label">Your Family</div>
-      <div class="sheet-field-group">
-        <div class="sheet-field-row">
-          <input class="setup-input" type="text" id="ss-your-name" placeholder="Your name">
-          <input class="setup-input" type="text" id="ss-partner-name" placeholder="Partner's name">
-        </div>
-        <input class="setup-input" type="text" id="ss-partner-phone" placeholder="Partner's phone (for texting)">
-        <input class="setup-input" type="text" id="ss-kids" placeholder="Kids' names & ages">
-        <input class="setup-input" type="text" id="ss-assistant-name" placeholder="Assistant name (Lumi)">
+    <div class="sheet-section"><div class="sec-label">API Key</div><input class="inp" type="password" id="ss-api-key"></div>
+    <div class="sheet-section"><div class="sec-label">Your Family</div>
+      <div class="field-group">
+        <input class="inp" type="text" id="ss-kids" placeholder="Kids' names & ages">
+        <input class="inp" type="text" id="ss-partner-phone" placeholder="Partner's phone">
+        <input class="inp" type="text" id="ss-assistant-name" placeholder="Assistant name">
       </div>
     </div>
-
-    <div class="sheet-section">
-      <div class="sheet-section-label">Extra Context</div>
-      <textarea class="settings-textarea" id="ss-context" placeholder="Anything else your assistant should know — school name, work schedules, extracurriculars, preferences…"></textarea>
+    <div class="sheet-section"><div class="sec-label">Extra Context</div>
+      <textarea class="settings-textarea" id="ss-context" placeholder="School names, schedules, extracurriculars, preferences…"></textarea>
     </div>
-
-    <div class="sheet-section">
-      <div class="sheet-section-label">Features</div>
-      <div class="toggle-row">
-        <div>
-          <div class="toggle-label">Web search</div>
-          <div class="toggle-hint">Let the assistant look things up online</div>
-        </div>
-        <button class="toggle-switch on" id="ss-web-search" onclick="this.classList.toggle('on')"></button>
-      </div>
+    <div class="sheet-section"><div class="sec-label">Features</div>
+      <div class="toggle-row"><div><div class="toggle-label">Web search</div><div class="toggle-hint">Look things up online</div></div>
+        <button class="toggle-switch on" id="ss-web-search" onclick="this.classList.toggle('on')"></button></div>
     </div>
-
-    <div class="sheet-section">
-      <div class="sheet-section-label">AI Model</div>
+    <div class="sheet-section"><div class="sec-label">AI Model</div>
       <select class="model-select" id="ss-model">
-        <option value="claude-sonnet-4-6">Claude Sonnet 4 — Balanced (recommended)</option>
-        <option value="claude-haiku-4-5-20251001">Claude Haiku 4 — Fast &amp; affordable</option>
+        <option value="claude-sonnet-4-6">Claude Sonnet 4 — Balanced</option>
+        <option value="claude-haiku-4-5-20251001">Claude Haiku 4 — Fast</option>
         <option value="claude-opus-4-7">Claude Opus 4 — Most powerful</option>
       </select>
     </div>
-
     <button class="sheet-action-btn btn-save" onclick="saveSettings()">Save Changes</button>
-    <button class="sheet-action-btn btn-danger" onclick="clearAllThreads()">Clear all conversations</button>
+    <button class="sheet-action-btn btn-danger" onclick="clearThread()">Clear this thread</button>
+    <button class="sheet-action-btn btn-secondary" onclick="signOutUser()">Sign out</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Firebase SDK (compat for simplicity) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
 
 <script>
 // ════════════════════════════
 // THREAD DEFINITIONS
 // ════════════════════════════
 const THREAD_META = {
-  chat:     { icon: '💬', label: 'Chat', promptHint: '' },
-  briefing: { icon: '📋', label: 'Daily briefing', promptHint: 'Focus this conversation on daily/weekly scheduling, upcoming events, and deadlines. Lead with urgency.' },
-  school:   { icon: '🏫', label: 'School stuff', promptHint: 'Focus this conversation on school-related items: deadlines, permission slips, school events, registration, teachers, supplies.' },
-  todos:    { icon: '✅', label: 'To-do list', promptHint: 'Focus this conversation on building and managing to-do lists. Organize by priority and assign ownership.' },
-  remind:   { icon: '📅', label: 'Reminders', promptHint: 'Focus this conversation on reminders — things to remember, upcoming dates, recurring tasks.' },
-  share:    { icon: '💌', label: 'Share with partner', promptHint: 'Focus this conversation on drafting messages to share with the partner. Keep messages friendly, concise, and actionable. After drafting, ask if they want to send it.' },
+  chat:     { icon:'💬', label:'Chat', hint:'' },
+  inbox:    { icon:'📧', label:'Inbox', hint:'This thread is for reviewing emails. Summarize and surface important items from the email content provided.' },
+  briefing: { icon:'📋', label:'Daily briefing', hint:'Focus on daily/weekly scheduling, upcoming events, and deadlines.' },
+  school:   { icon:'🏫', label:'School stuff', hint:'Focus on school: deadlines, permission slips, events, registration, supplies.' },
+  todos:    { icon:'✅', label:'To-do list', hint:'Focus on building and managing to-do lists. Organize by priority and assign ownership.' },
+  remind:   { icon:'📅', label:'Reminders', hint:'Focus on reminders — things to remember, upcoming dates, recurring tasks.' },
+  share:    { icon:'💌', label:'Share with partner', hint:'Draft messages to share with partner. Keep them friendly, concise, actionable.' },
 };
-
 const THREAD_SUGGESTIONS = {
-  chat: [
-    "What's coming up this week?",
-    "I need to think through something",
-    "Help me prioritize today",
-    "I'm feeling overwhelmed",
-  ],
-  briefing: [
-    "Give me today's briefing",
-    "What's happening this week?",
-    "Any deadlines I should know about?",
-  ],
-  school: [
-    "What school deadlines should I be tracking?",
-    "Help me organize school paperwork",
-    "When is kindergarten registration?",
-  ],
-  todos: [
-    "Let's build my to-do list",
-    "What should my husband handle?",
-    "Help me prioritize what's on my plate",
-  ],
-  remind: [
-    "I need to remember something",
-    "What recurring things should I track?",
-    "Help me set up reminders for the week",
-  ],
-  share: [
-    "Draft a message to share this week's schedule",
-    "What tasks should I hand off to my husband?",
-    "Help me share pickup/dropoff info",
-  ],
+  chat:['What\'s coming up this week?','I need to think through something','Help me prioritize today'],
+  inbox:['Summarize my recent emails','Any school emails I should act on?','What deadlines are in my inbox?'],
+  briefing:['Give me today\'s briefing','What\'s happening this week?','Any deadlines coming up?'],
+  school:['What school deadlines should I track?','Help me organize school paperwork','When is registration?'],
+  todos:['Let\'s build my to-do list','What should my husband handle?','Help me prioritize'],
+  remind:['I need to remember something','What recurring things should I track?','Reminders for this week'],
+  share:['Draft a weekly schedule update','What tasks to hand off?','Share pickup/dropoff info'],
 };
 
 // ════════════════════════════
 // STATE
 // ════════════════════════════
-let config = {};
+let fbConfig = null;
+let fbApp = null, fbAuth = null, fbDb = null;
+let currentUser = null;
+let familyId = null, familyData = null;
 let threads = {};
 let activeThread = 'chat';
 let isLoading = false;
+let localMode = false;
+let gmailToken = null;
+let unsubFamily = null, unsubThreads = {};
 
 function getThread(id) {
   if (!threads[id]) threads[id] = { apiMessages: [], displayLog: [] };
@@ -502,204 +336,378 @@ function getThread(id) {
 // INIT
 // ════════════════════════════
 function init() {
-  try { config = JSON.parse(localStorage.getItem('lumi_config') || '{}'); } catch (e) { config = {}; }
+  fbConfig = loadJson('lumi_fb_config');
+  if (!fbConfig && !localMode) {
+    const oldConfig = loadJson('lumi_config');
+    if (oldConfig && oldConfig.apiKey) {
+      localMode = true;
+      migrateFromLocal(oldConfig);
+      return;
+    }
+    showScreen('firebase-setup-screen');
+    return;
+  }
+  if (localMode || !fbConfig) {
+    localMode = true;
+    loadLocalState();
+    return;
+  }
+  initFirebase();
+}
 
-  if (config.apiKey) {
-    showApp();
-    restoreThreads();
-    renderThread(activeThread);
-  } else {
-    showSetup();
+function migrateFromLocal(oldConfig) {
+  familyData = {
+    apiKey: oldConfig.apiKey, assistantName: oldConfig.assistantName || 'Lumi',
+    kids: oldConfig.kids || '', partnerPhone: oldConfig.partnerPhone || '',
+    webSearch: oldConfig.webSearch !== false, model: oldConfig.model || 'claude-sonnet-4-6',
+    extraContext: oldConfig.extraContext || '', partnerName: oldConfig.partnerName || '',
+    yourName: oldConfig.yourName || '',
+  };
+  try { const t = loadJson('lumi_threads'); if (t) threads = t; } catch(e) {}
+  if (!Object.keys(threads).length) {
+    try { const h = loadJson('lumi_history'); if (h) threads.chat = h; } catch(e) {}
+  }
+  showApp();
+}
+
+function loadLocalState() {
+  familyData = loadJson('lumi_family') || {};
+  threads = loadJson('lumi_threads_local') || {};
+  if (familyData.apiKey) showApp();
+  else showScreen('family-screen');
+}
+
+function enterLocalMode(e) {
+  e.preventDefault();
+  localMode = true;
+  showScreen('family-screen');
+}
+
+// ════════════════════════════
+// FIREBASE
+// ════════════════════════════
+function initFirebase() {
+  try {
+    fbApp = firebase.initializeApp(fbConfig);
+    fbAuth = firebase.auth();
+    fbDb = firebase.firestore();
+    fbAuth.onAuthStateChanged(onAuthChange);
+  } catch (e) {
+    showScreen('firebase-setup-screen');
+    showError('fb-setup-error', 'Firebase config error: ' + e.message);
   }
 }
 
-function showSetup() {
-  document.getElementById('setup-screen').classList.remove('hidden');
-  document.getElementById('app-screen').classList.add('hidden');
+function saveFbConfig() {
+  const raw = document.getElementById('fb-config-input').value.trim();
+  try {
+    let parsed;
+    if (raw.startsWith('{')) parsed = JSON.parse(raw);
+    else {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error('Could not find JSON object');
+    }
+    if (!parsed.apiKey || !parsed.projectId) throw new Error('Missing apiKey or projectId');
+    fbConfig = parsed;
+    localStorage.setItem('lumi_fb_config', JSON.stringify(fbConfig));
+    initFirebase();
+    showScreen('signin-screen');
+  } catch (e) {
+    showError('fb-setup-error', 'Invalid config: ' + e.message);
+  }
+}
+
+function onAuthChange(user) {
+  currentUser = user;
+  if (!user) { showScreen('signin-screen'); return; }
+  document.getElementById('user-avatar').src = user.photoURL || '';
+  findFamily();
+}
+
+async function googleSignIn() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+  try {
+    const result = await fbAuth.signInWithPopup(provider);
+    const cred = result.credential;
+    if (cred) gmailToken = cred.accessToken;
+  } catch (e) {
+    showError('signin-error', e.message);
+  }
+}
+
+function signOutUser() {
+  if (unsubFamily) unsubFamily();
+  Object.values(unsubThreads).forEach(u => u());
+  if (fbAuth) fbAuth.signOut();
+  currentUser = null; familyId = null; familyData = null; threads = {};
+  if (localMode) {
+    localMode = false;
+    localStorage.removeItem('lumi_family');
+    localStorage.removeItem('lumi_threads_local');
+  }
+  document.getElementById('settings-overlay').classList.add('hidden');
+  init();
+}
+
+// ════════════════════════════
+// FAMILY
+// ════════════════════════════
+async function findFamily() {
+  const snap = await fbDb.collection('families').where('memberIds', 'array-contains', currentUser.uid).limit(1).get();
+  if (!snap.empty) {
+    familyId = snap.docs[0].id;
+    familyData = snap.docs[0].data().config || {};
+    listenToFamily();
+    showApp();
+    return;
+  }
+  const inviteSnap = await fbDb.collection('families').where('invitedEmail', '==', currentUser.email).limit(1).get();
+  if (!inviteSnap.empty) {
+    familyId = inviteSnap.docs[0].id;
+    const d = inviteSnap.docs[0].data();
+    familyData = d.config || {};
+    document.getElementById('family-create').style.display = 'none';
+    document.getElementById('family-join').style.display = 'block';
+    document.getElementById('family-join-info').innerHTML = `<p style="font-size:15px;margin-bottom:8px">Family created by <b>${d.members?.[Object.keys(d.members)[0]]?.name || 'your partner'}</b></p>`;
+    showFamilyBadge();
+    showScreen('family-screen');
+    return;
+  }
+  document.getElementById('family-create').style.display = 'block';
+  document.getElementById('family-join').style.display = 'none';
+  showFamilyBadge();
+  showScreen('family-screen');
+}
+
+function showFamilyBadge() {
+  if (!currentUser) return;
+  const badge = document.getElementById('family-user-badge');
+  badge.style.display = 'flex';
+  badge.innerHTML = `<img src="${currentUser.photoURL||''}" alt=""><div><div class="ub-name">${currentUser.displayName||''}</div><div class="ub-email">${currentUser.email}</div></div>`;
+}
+
+async function createFamily() {
+  const apiKey = document.getElementById('f-api-key').value.trim();
+  if (!apiKey) { showError('family-error', 'API key is required'); return; }
+  const config = {
+    apiKey,
+    kids: document.getElementById('f-kids').value.trim(),
+    partnerPhone: document.getElementById('f-partner-phone').value.trim(),
+    assistantName: document.getElementById('f-assistant-name').value.trim() || 'Lumi',
+    webSearch: true, model: 'claude-sonnet-4-6', extraContext: '',
+  };
+  const partnerEmail = document.getElementById('f-partner-email').value.trim();
+  const familyDoc = {
+    config,
+    memberIds: [currentUser.uid],
+    members: { [currentUser.uid]: { name: currentUser.displayName, email: currentUser.email, photo: currentUser.photoURL } },
+    invitedEmail: partnerEmail || '',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  if (localMode) {
+    familyData = { ...config, yourName: currentUser?.displayName || '' };
+    localStorage.setItem('lumi_family', JSON.stringify(familyData));
+    showApp();
+    return;
+  }
+
+  try {
+    const ref = await fbDb.collection('families').add(familyDoc);
+    familyId = ref.id;
+    familyData = config;
+    listenToFamily();
+    showApp();
+  } catch (e) {
+    showError('family-error', e.message);
+  }
+}
+
+async function joinFamily() {
+  try {
+    await fbDb.collection('families').doc(familyId).update({
+      memberIds: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
+      [`members.${currentUser.uid}`]: { name: currentUser.displayName, email: currentUser.email, photo: currentUser.photoURL },
+    });
+    listenToFamily();
+    showApp();
+  } catch (e) {
+    showError('family-error', e.message);
+  }
+}
+
+function listenToFamily() {
+  if (!familyId || !fbDb) return;
+  unsubFamily = fbDb.collection('families').doc(familyId).onSnapshot(snap => {
+    if (!snap.exists) return;
+    const d = snap.data();
+    familyData = d.config || familyData;
+    updateIdentity();
+  });
+}
+
+// ════════════════════════════
+// THREAD PERSISTENCE (FIRESTORE)
+// ════════════════════════════
+function loadThread(threadId) {
+  if (localMode || !familyId) return;
+  if (unsubThreads[threadId]) return;
+  unsubThreads[threadId] = fbDb.collection('families').doc(familyId)
+    .collection('threads').doc(threadId).onSnapshot(snap => {
+      if (!snap.exists) return;
+      const d = snap.data();
+      threads[threadId] = { apiMessages: d.apiMessages || [], displayLog: d.displayLog || [] };
+      if (threadId === activeThread) renderThread(threadId);
+    });
+}
+
+function saveThread(threadId) {
+  const thread = getThread(threadId);
+  if (localMode || !familyId) {
+    localStorage.setItem('lumi_threads_local', JSON.stringify(threads));
+    return;
+  }
+  fbDb.collection('families').doc(familyId).collection('threads').doc(threadId).set({
+    apiMessages: thread.apiMessages.slice(-50),
+    displayLog: thread.displayLog.slice(-200),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true }).catch(e => console.error('Save failed:', e));
+}
+
+// ════════════════════════════
+// GMAIL
+// ════════════════════════════
+async function fetchEmails() {
+  if (!gmailToken) {
+    showToast('Reconnecting Gmail…');
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+      const result = await fbAuth.signInWithPopup(provider);
+      gmailToken = result.credential?.accessToken;
+    } catch (e) { showToast('Gmail auth failed'); return null; }
+  }
+  try {
+    const listResp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=8&labelIds=INBOX', {
+      headers: { 'Authorization': 'Bearer ' + gmailToken }
+    });
+    if (listResp.status === 401) { gmailToken = null; return fetchEmails(); }
+    if (!listResp.ok) throw new Error('Gmail API error');
+    const listData = await listResp.json();
+    if (!listData.messages?.length) return 'No new emails in your inbox.';
+    const emails = [];
+    for (const msg of listData.messages.slice(0, 8)) {
+      const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`, {
+        headers: { 'Authorization': 'Bearer ' + gmailToken }
+      });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const headers = {};
+      (d.payload?.headers || []).forEach(h => headers[h.name] = h.value);
+      emails.push(`- From: ${headers.From || '?'}\n  Subject: ${headers.Subject || '(no subject)'}\n  Date: ${headers.Date || '?'}\n  Snippet: ${d.snippet || ''}`);
+    }
+    return 'Here are my recent emails:\n\n' + emails.join('\n\n');
+  } catch (e) {
+    console.error('Gmail fetch error:', e);
+    return null;
+  }
+}
+
+// ════════════════════════════
+// APP UI
+// ════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
 }
 
 function showApp() {
-  document.getElementById('setup-screen').classList.add('hidden');
-  document.getElementById('app-screen').classList.remove('hidden');
+  showScreen('app-screen');
   updateIdentity();
+  switchThread(activeThread);
 }
 
 function updateIdentity() {
-  const name = config.assistantName || 'Lumi';
+  const name = familyData?.assistantName || 'Lumi';
   document.getElementById('header-name').textContent = name;
   document.getElementById('msg-input').placeholder = `Message ${name}…`;
 }
 
-// ════════════════════════════
-// SETUP & SETTINGS
-// ════════════════════════════
-function saveSetup() {
-  const apiKey = document.getElementById('s-api-key').value.trim();
-  if (!apiKey) { showToast('Please enter your API key'); return; }
-  config = {
-    apiKey,
-    yourName:      document.getElementById('s-your-name').value.trim()      || 'you',
-    partnerName:   document.getElementById('s-partner-name').value.trim()   || 'your partner',
-    partnerPhone:  document.getElementById('s-partner-phone').value.trim(),
-    kids:          document.getElementById('s-kids').value.trim(),
-    assistantName: document.getElementById('s-assistant-name').value.trim() || 'Lumi',
-    model:         'claude-sonnet-4-6',
-    webSearch:     true,
-    extraContext:  '',
-  };
-  saveConfig();
-  showApp();
-  renderThread('chat');
-}
-
-function openSettings() {
-  document.getElementById('ss-api-key').value       = config.apiKey || '';
-  document.getElementById('ss-your-name').value     = config.yourName || '';
-  document.getElementById('ss-partner-name').value  = config.partnerName || '';
-  document.getElementById('ss-partner-phone').value = config.partnerPhone || '';
-  document.getElementById('ss-kids').value          = config.kids || '';
-  document.getElementById('ss-assistant-name').value = config.assistantName || '';
-  document.getElementById('ss-context').value       = config.extraContext || '';
-  document.getElementById('ss-model').value         = config.model || 'claude-sonnet-4-6';
-  const wsBtn = document.getElementById('ss-web-search');
-  if (config.webSearch !== false) wsBtn.classList.add('on');
-  else wsBtn.classList.remove('on');
-  document.getElementById('settings-overlay').classList.remove('hidden');
-}
-
-function overlayClick(e) {
-  if (e.target === document.getElementById('settings-overlay'))
-    document.getElementById('settings-overlay').classList.add('hidden');
-}
-
-function saveSettings() {
-  config = {
-    ...config,
-    apiKey:        document.getElementById('ss-api-key').value.trim()        || config.apiKey,
-    yourName:      document.getElementById('ss-your-name').value.trim()      || config.yourName,
-    partnerName:   document.getElementById('ss-partner-name').value.trim()   || config.partnerName,
-    partnerPhone:  document.getElementById('ss-partner-phone').value.trim(),
-    kids:          document.getElementById('ss-kids').value.trim(),
-    assistantName: document.getElementById('ss-assistant-name').value.trim() || 'Lumi',
-    extraContext:  document.getElementById('ss-context').value.trim(),
-    model:         document.getElementById('ss-model').value,
-    webSearch:     document.getElementById('ss-web-search').classList.contains('on'),
-  };
-  saveConfig();
-  document.getElementById('settings-overlay').classList.add('hidden');
-  updateIdentity();
-  showToast('Settings saved');
-}
-
-function clearAllThreads() {
-  if (!confirm('Clear ALL conversation threads? This cannot be undone.')) return;
-  threads = {};
-  localStorage.removeItem('lumi_threads');
-  renderThread(activeThread);
-  document.getElementById('settings-overlay').classList.add('hidden');
-  showToast('All threads cleared');
-}
-
-function saveConfig() { localStorage.setItem('lumi_config', JSON.stringify(config)); }
-
-// ════════════════════════════
-// THREAD SWITCHING
-// ════════════════════════════
 function switchThread(threadId) {
   activeThread = threadId;
-  document.querySelectorAll('.t-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.thread === threadId);
-  });
+  document.querySelectorAll('.t-tab').forEach(t => t.classList.toggle('active', t.dataset.thread === threadId));
+  loadThread(threadId);
   renderThread(threadId);
-  localStorage.setItem('lumi_active_thread', threadId);
 }
 
 function renderThread(threadId) {
   const chatArea = document.getElementById('chat-area');
   chatArea.innerHTML = '';
   const thread = getThread(threadId);
-
-  if (thread.displayLog.length === 0) {
+  if (!thread.displayLog.length) {
     renderWelcome(threadId);
   } else {
-    thread.displayLog.forEach(entry => {
-      if (entry.type === 'search') appendSearchNote(entry.query, false);
-      else if (entry.type === 'sms') appendSmsButton(entry.text, false);
-      else appendBubbles(entry.role, entry.texts, false, entry.isError);
+    thread.displayLog.forEach(e => {
+      if (e.type === 'search') appendSearchNote(e.query, false);
+      else if (e.type === 'sms') appendSmsButton(e.text, false);
+      else appendBubbles(e.role, e.texts, false, e.isError);
     });
   }
   scrollBottom();
 }
 
 function renderWelcome(threadId) {
-  const meta = THREAD_META[threadId];
-  const suggestions = THREAD_SUGGESTIONS[threadId] || [];
-  const name = config.assistantName || 'Lumi';
-  const chatArea = document.getElementById('chat-area');
-
+  const meta = THREAD_META[threadId] || {};
+  const sugg = THREAD_SUGGESTIONS[threadId] || [];
+  const name = familyData?.assistantName || 'Lumi';
+  const partner = currentUser?.displayName || 'your partner';
   const welcomeTexts = {
-    chat:     `I'm here to help you manage family life — catching deadlines, building lists, and making sure nothing slips through the cracks.`,
-    briefing: `Let's get you up to speed on what's happening today and this week.`,
-    school:   `Let's stay on top of school deadlines, permission slips, events, and everything in between.`,
-    todos:    `Let's organize what needs to happen and figure out who should handle what.`,
-    remind:   `Let's make sure nothing important slips through the cracks.`,
-    share:    `Let's draft something to share with ${config.partnerName || 'your partner'} — I can help you text it directly.`,
+    chat: 'Catching deadlines, building lists, and making sure nothing slips through the cracks.',
+    inbox: `Tap a suggestion or type to have ${name} read and summarize your recent emails.`,
+    briefing: 'Get up to speed on what\'s happening today and this week.',
+    school: 'Stay on top of school deadlines, permission slips, and events.',
+    todos: 'Organize what needs to happen and who should handle what.',
+    remind: 'Make sure nothing important slips through the cracks.',
+    share: `Draft messages to share with ${familyData?.partnerName || 'your partner'} — send them right via text.`,
   };
-
-  chatArea.innerHTML = `
+  document.getElementById('chat-area').innerHTML = `
     <div class="welcome-state">
-      <div class="welcome-emoji">${meta.icon}</div>
+      <div class="welcome-emoji">${meta.icon || '🌿'}</div>
       <div class="welcome-title">${threadId === 'chat' ? `Hi, I'm ${name}!` : meta.label}</div>
       <div class="welcome-body">${welcomeTexts[threadId] || ''}</div>
-      <div class="suggestion-grid">
-        ${suggestions.map(s => `<button class="suggestion-chip" onclick="sendText(this.textContent)">${s}</button>`).join('')}
-      </div>
-    </div>
-  `;
-}
-
-// ════════════════════════════
-// THREAD PERSISTENCE
-// ════════════════════════════
-function restoreThreads() {
-  try {
-    const raw = localStorage.getItem('lumi_threads');
-    if (raw) threads = JSON.parse(raw);
-  } catch (e) { threads = {}; }
-  activeThread = localStorage.getItem('lumi_active_thread') || 'chat';
-  document.querySelectorAll('.t-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.thread === activeThread);
-  });
-}
-
-function persistThreads() {
-  localStorage.setItem('lumi_threads', JSON.stringify(threads));
+      <div class="suggestion-grid">${sugg.map(s => `<button class="suggestion-chip" onclick="sendText(this.textContent)">${s}</button>`).join('')}</div>
+    </div>`;
 }
 
 // ════════════════════════════
 // MESSAGING
 // ════════════════════════════
-function sendText(text) {
-  document.getElementById('msg-input').value = text;
-  sendMessage();
-}
+function sendText(text) { document.getElementById('msg-input').value = text; sendMessage(); }
 
 async function sendMessage() {
   if (isLoading) return;
   const inputEl = document.getElementById('msg-input');
-  const text = inputEl.value.trim();
+  let text = inputEl.value.trim();
   if (!text) return;
-  if (!config.apiKey) { showToast('Add your API key in Settings first'); openSettings(); return; }
+  if (!familyData?.apiKey) { showToast('Add your API key in Settings'); openSettings(); return; }
 
-  // Clear welcome
   const ws = document.querySelector('.welcome-state');
   if (ws) ws.remove();
+  inputEl.value = ''; inputEl.style.height = 'auto';
 
-  inputEl.value = '';
-  inputEl.style.height = 'auto';
+  // For inbox thread, fetch emails and prepend
+  if (activeThread === 'inbox' && getThread('inbox').apiMessages.length === 0) {
+    showToast('Fetching your emails…');
+    const emailText = await fetchEmails();
+    if (emailText) text = emailText + '\n\n---\n\nMy request: ' + text;
+  }
 
   const thread = getThread(activeThread);
-  appendBubbles('user', [text], true);
+  const displayText = activeThread === 'inbox' && text.includes('My request:')
+    ? text.split('My request: ').pop() : text;
+  appendBubbles('user', [displayText], true);
   thread.apiMessages.push({ role: 'user', content: text });
 
   const typingEl = showTyping();
@@ -708,75 +716,46 @@ async function sendMessage() {
 
   try {
     const reqBody = {
-      model:      config.model || 'claude-sonnet-4-6',
+      model: familyData.model || 'claude-sonnet-4-6',
       max_tokens: 2048,
-      system:     buildSystemPrompt(activeThread),
-      messages:   thread.apiMessages,
+      system: buildSystemPrompt(activeThread),
+      messages: thread.apiMessages,
     };
-
-    if (config.webSearch !== false) {
+    if (familyData.webSearch !== false) {
       reqBody.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
     }
-
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': config.apiKey,
+        'x-api-key': familyData.apiKey,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify(reqBody),
     });
-
     if (!resp.ok) {
       const errData = await resp.json().catch(() => ({}));
       throw new Error(errData.error?.message || `HTTP ${resp.status}`);
     }
-
     const data = await resp.json();
     typingEl.remove();
-
-    // Extract text and search queries from content blocks
-    let replyParts = [];
-    let searchQueries = [];
+    let replyParts = [], searchQueries = [];
     for (const block of data.content) {
-      if (block.type === 'text' && block.text) {
-        replyParts.push(block.text);
-      } else if (block.type === 'web_search_tool_use') {
-        searchQueries.push(block.input?.query || 'web');
-      }
+      if (block.type === 'text' && block.text) replyParts.push(block.text);
+      else if (block.type === 'web_search_tool_use') searchQueries.push(block.input?.query || 'web');
     }
-
     const replyText = replyParts.join('\n\n') || '(no response)';
-
-    // Show search indicator if searches were made
-    if (searchQueries.length > 0) {
-      appendSearchNote(searchQueries.join(', '), true);
-    }
-
+    if (searchQueries.length) appendSearchNote(searchQueries.join(', '), true);
     appendBubbles('ai', [replyText], true);
-
-    // Store full content for conversation continuity
     thread.apiMessages.push({ role: 'assistant', content: data.content });
-
-    // In "share" thread, offer SMS button
-    if (activeThread === 'share' && config.partnerPhone) {
-      appendSmsButton(replyText, true);
-    }
-
-    // Trim to last 50 messages
-    if (thread.apiMessages.length > 50) {
-      thread.apiMessages = thread.apiMessages.slice(-50);
-    }
-
-    persistThreads();
-
+    if (activeThread === 'share' && familyData.partnerPhone) appendSmsButton(replyText, true);
+    if (thread.apiMessages.length > 50) thread.apiMessages = thread.apiMessages.slice(-50);
+    saveThread(activeThread);
   } catch (err) {
     typingEl.remove();
-    appendBubbles('ai', [`⚠️ Error: ${err.message}\n\nDouble-check your API key in Settings.`], true, true);
+    appendBubbles('ai', [`⚠️ Error: ${err.message}\n\nCheck your API key in Settings.`], true, true);
   }
-
   isLoading = false;
   document.getElementById('send-btn').disabled = false;
 }
@@ -784,161 +763,135 @@ async function sendMessage() {
 // ════════════════════════════
 // RENDER HELPERS
 // ════════════════════════════
-function appendBubbles(role, texts, scroll = true, isError = false) {
+function appendBubbles(role, texts, scroll, isError) {
   const chatArea = document.getElementById('chat-area');
   const thread = getThread(activeThread);
   const group = document.createElement('div');
-  group.className = `msg-group ${role}`;
-  group.dataset.role = role;
-
+  group.className = `msg-group ${role}`; group.dataset.role = role;
   if (role === 'ai') {
-    const sender = document.createElement('div');
-    sender.className = 'msg-sender-name';
-    sender.textContent = config.assistantName || 'Lumi';
-    group.appendChild(sender);
+    const s = document.createElement('div'); s.className = 'msg-sender-name';
+    s.textContent = familyData?.assistantName || 'Lumi'; group.appendChild(s);
+  } else if (role === 'user' && currentUser) {
+    const s = document.createElement('div'); s.className = 'msg-sender-name';
+    s.textContent = currentUser.displayName?.split(' ')[0] || 'You'; group.appendChild(s);
   }
-
-  texts.forEach(t => {
-    const el = document.createElement('div');
-    el.className = 'msg-bubble' + (isError ? ' error-bubble' : '');
-    el.textContent = t;
-    group.appendChild(el);
-  });
-
+  texts.forEach(t => { const el = document.createElement('div'); el.className = 'msg-bubble' + (isError ? ' error-bubble' : ''); el.textContent = t; group.appendChild(el); });
   chatArea.appendChild(group);
-  thread.displayLog.push({ type: 'bubble', role, texts: [...texts], isError });
-  if (scroll) scrollBottom();
+  if (scroll !== false) { thread.displayLog.push({ type:'bubble', role, texts:[...texts], isError }); scrollBottom(); }
 }
 
 function appendSearchNote(query, persist) {
-  const chatArea = document.getElementById('chat-area');
-  const el = document.createElement('div');
-  el.className = 'search-note';
-  el.textContent = `🔍 Searched: ${query}`;
-  chatArea.appendChild(el);
-  if (persist) {
-    const thread = getThread(activeThread);
-    thread.displayLog.push({ type: 'search', query });
-  }
+  const el = document.createElement('div'); el.className = 'search-note';
+  el.textContent = '🔍 Searched: ' + query;
+  document.getElementById('chat-area').appendChild(el);
+  if (persist) getThread(activeThread).displayLog.push({ type:'search', query });
 }
 
-function appendSmsButton(messageText, persist) {
-  const chatArea = document.getElementById('chat-area');
-  const btn = document.createElement('button');
-  btn.className = 'sms-btn';
-  btn.innerHTML = '📱 Send to ' + (config.partnerName || 'partner') + ' via text';
-  btn.onclick = () => {
-    const phone = config.partnerPhone || '';
-    const body = encodeURIComponent(messageText.substring(0, 1000));
-    window.location.href = `sms:${phone}${phone ? '&' : ''}body=${body}`;
-  };
-  chatArea.appendChild(btn);
-  if (persist) {
-    const thread = getThread(activeThread);
-    thread.displayLog.push({ type: 'sms', text: messageText });
-  }
+function appendSmsButton(text, persist) {
+  const btn = document.createElement('button'); btn.className = 'sms-btn';
+  btn.innerHTML = '📱 Send to ' + (familyData?.partnerName || 'partner') + ' via text';
+  btn.onclick = () => { const p = familyData?.partnerPhone || ''; window.location.href = `sms:${p}${p?'&':''}body=${encodeURIComponent(text.substring(0,1000))}`; };
+  document.getElementById('chat-area').appendChild(btn);
+  if (persist) getThread(activeThread).displayLog.push({ type:'sms', text });
   scrollBottom();
 }
 
 function showTyping() {
-  const chatArea = document.getElementById('chat-area');
-  const group = document.createElement('div');
-  group.className = 'typing-group';
-  const name = document.createElement('div');
-  name.className = 'msg-sender-name';
-  name.textContent = config.assistantName || 'Lumi';
-  group.appendChild(name);
-  const dots = document.createElement('div');
-  dots.className = 'typing-dots';
-  dots.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
-  group.appendChild(dots);
-  if (config.webSearch !== false) {
-    const hint = document.createElement('div');
-    hint.className = 'searching-label';
-    hint.textContent = 'may search the web…';
-    group.appendChild(hint);
-  }
-  chatArea.appendChild(group);
-  scrollBottom();
-  return group;
+  const g = document.createElement('div'); g.className = 'typing-group';
+  const n = document.createElement('div'); n.className = 'msg-sender-name'; n.textContent = familyData?.assistantName || 'Lumi'; g.appendChild(n);
+  const d = document.createElement('div'); d.className = 'typing-dots'; d.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>'; g.appendChild(d);
+  if (familyData?.webSearch !== false) { const h = document.createElement('div'); h.className = 'searching-label'; h.textContent = 'may search the web…'; g.appendChild(h); }
+  document.getElementById('chat-area').appendChild(g); scrollBottom(); return g;
 }
 
-function scrollBottom() {
-  const ca = document.getElementById('chat-area');
-  ca.scrollTop = ca.scrollHeight;
+function scrollBottom() { const c = document.getElementById('chat-area'); c.scrollTop = c.scrollHeight; }
+
+// ════════════════════════════
+// SETTINGS
+// ════════════════════════════
+function openSettings() {
+  document.getElementById('ss-api-key').value = familyData?.apiKey || '';
+  document.getElementById('ss-kids').value = familyData?.kids || '';
+  document.getElementById('ss-partner-phone').value = familyData?.partnerPhone || '';
+  document.getElementById('ss-assistant-name').value = familyData?.assistantName || '';
+  document.getElementById('ss-context').value = familyData?.extraContext || '';
+  document.getElementById('ss-model').value = familyData?.model || 'claude-sonnet-4-6';
+  const ws = document.getElementById('ss-web-search');
+  familyData?.webSearch !== false ? ws.classList.add('on') : ws.classList.remove('on');
+  document.getElementById('settings-overlay').classList.remove('hidden');
 }
+
+function saveSettings() {
+  familyData = {
+    ...familyData,
+    apiKey: document.getElementById('ss-api-key').value.trim() || familyData?.apiKey,
+    kids: document.getElementById('ss-kids').value.trim(),
+    partnerPhone: document.getElementById('ss-partner-phone').value.trim(),
+    assistantName: document.getElementById('ss-assistant-name').value.trim() || 'Lumi',
+    extraContext: document.getElementById('ss-context').value.trim(),
+    model: document.getElementById('ss-model').value,
+    webSearch: document.getElementById('ss-web-search').classList.contains('on'),
+  };
+  if (!localMode && familyId) {
+    fbDb.collection('families').doc(familyId).update({ config: familyData }).catch(e => showToast('Save error: ' + e.message));
+  } else {
+    localStorage.setItem('lumi_family', JSON.stringify(familyData));
+  }
+  document.getElementById('settings-overlay').classList.add('hidden');
+  updateIdentity();
+  showToast('Settings saved');
+}
+
+function clearThread() {
+  if (!confirm('Clear this thread?')) return;
+  threads[activeThread] = { apiMessages: [], displayLog: [] };
+  saveThread(activeThread);
+  renderThread(activeThread);
+  document.getElementById('settings-overlay').classList.add('hidden');
+  showToast('Thread cleared');
+}
+
+function showUserMenu() { openSettings(); }
 
 // ════════════════════════════
 // SYSTEM PROMPT
 // ════════════════════════════
 function buildSystemPrompt(threadId) {
-  const name     = config.assistantName || 'Lumi';
-  const you      = config.yourName      || 'you';
-  const partner  = config.partnerName   || 'your partner';
-  const kids     = config.kids || 'children (not specified yet)';
-  const extra    = config.extraContext  || '';
-  const today    = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-  const meta     = THREAD_META[threadId] || {};
-
-  return `You are ${name}, a warm and practical family planning assistant for ${you}.
+  const name = familyData?.assistantName || 'Lumi';
+  const you = currentUser?.displayName || familyData?.yourName || 'you';
+  const kids = familyData?.kids || 'children (not specified)';
+  const extra = familyData?.extraContext || '';
+  const today = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const meta = THREAD_META[threadId] || {};
+  return `You are ${name}, a warm family planning assistant for ${you}.
 
 Today is ${today}.
 
-Family:
-- ${you} — primary user
-- ${partner} — co-parent / partner
-- Kids: ${kids}
-${extra ? `\nExtra context:\n${extra}` : ''}
-${meta.promptHint ? `\nTHIS CONVERSATION THREAD: "${meta.label}"\n${meta.promptHint}` : ''}
+Family: ${you}, partner, kids: ${kids}
+${extra ? 'Extra context: ' + extra : ''}
+${meta.hint ? '\nTHIS THREAD: "' + meta.label + '" — ' + meta.hint : ''}
 
-Your purpose:
-1. Reduce ${you}'s mental load — surface what matters
-2. Catch things that slip: school deadlines, permission slips, RSVP dates, appointments
-3. Balance the load between ${you} and ${partner}
-4. Build and manage to-do lists by priority
-5. Give clear daily briefings
-6. Draft messages to share with ${partner}
-7. Look things up online when you need current info (you have web search)
-
-Communication rules:
-- Write like a trusted friend texting — warm, direct, concise
-- Keep responses SHORT and scannable
-- Use bullet points, short paragraphs, emojis to organize
-- When listing tasks, note WHO should do them
-- Flag time-sensitive things: ⚠️ or 📌
-- Be proactive — spot important things
-- Ask questions when you need more info
-- Skip formal greetings — just get to it
-- When you search the web, summarize the key findings clearly
-
-When drafting messages for ${partner}:
-- Friendly and informational, never naggy
-- Clear action items, not info dumps
-- Keep it concise — these go via text message`;
+Rules:
+- Write like a friend texting — warm, direct, concise
+- Short responses, bullet points, emojis to organize
+- Note WHO should do each task
+- Flag urgent things with ⚠️
+- Skip formal greetings
+- You have web search — use it for current info
+- When summarizing emails, highlight action items, deadlines, and things that need responses`;
 }
 
 // ════════════════════════════
-// TOAST
+// UTILITIES
 // ════════════════════════════
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2400);
-}
+function showToast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2400); }
+function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
+function loadJson(key) { try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; } }
 
-// ════════════════════════════
-// INPUT
-// ════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
-  input.addEventListener('input', function () {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 110) + 'px';
-  });
-  input.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  });
+  input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 110) + 'px'; });
+  input.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
   init();
 });
 </script>
