@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#F7F2EB">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
   <title>Lumi — Family Planner</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -14,666 +15,299 @@
     :root {
       --bg: #F7F2EB;
       --white: #FFFFFF;
-      --user-bubble: #E8634A;
-      --ai-bubble: #FFFFFF;
       --text: #1A1A1A;
       --text-mid: #666666;
       --text-light: #AAAAAA;
       --border: #E5DDD4;
       --shadow-sm: 0 1px 4px rgba(0,0,0,0.07);
       --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
-      --tag-green-bg: #D6EDD6;
-      --tag-green: #2E6B2E;
-      --tag-amber-bg: #FDF0CC;
-      --tag-amber: #92600A;
-      --tag-pink-bg: #FBDDE3;
-      --tag-pink: #A3213A;
-      --tag-blue-bg: #DCF0FD;
-      --tag-blue: #1059A0;
-      --tag-purple-bg: #EDE5FB;
-      --tag-purple: #5B21B6;
       --accent: #E8634A;
       --accent-dark: #C44D32;
+      --tag-green-bg: #D6EDD6; --tag-green: #2E6B2E;
+      --tag-amber-bg: #FDF0CC; --tag-amber: #92600A;
+      --tag-pink-bg: #FBDDE3;  --tag-pink: #A3213A;
+      --tag-blue-bg: #DCF0FD;  --tag-blue: #1059A0;
+      --tag-purple-bg: #EDE5FB; --tag-purple: #5B21B6;
+      --tag-gray-bg: #ECEAE6;  --tag-gray: #555555;
     }
 
     html, body {
-      height: 100%;
-      height: 100dvh;
+      height: 100%; height: 100dvh;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
     }
 
-    /* ────────────────────────────
-       SCREENS
-    ──────────────────────────── */
-    .screen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-    }
+    .screen { position: fixed; inset: 0; display: flex; flex-direction: column; }
     .screen.hidden { display: none; }
 
-    /* ────────────────────────────
-       SETUP / ONBOARDING
-    ──────────────────────────── */
+    /* ── SETUP ── */
     #setup-screen {
-      background: var(--bg);
-      align-items: center;
-      justify-content: center;
-      padding: 24px 20px;
-      overflow-y: auto;
+      background: var(--bg); align-items: center; justify-content: center;
+      padding: 24px 20px; overflow-y: auto;
     }
-
     .setup-card {
-      background: var(--white);
-      border-radius: 28px;
-      padding: 36px 28px 28px;
-      max-width: 420px;
-      width: 100%;
+      background: var(--white); border-radius: 28px;
+      padding: 36px 28px 28px; max-width: 420px; width: 100%;
       box-shadow: var(--shadow-md);
     }
-
-    .setup-logo {
-      font-size: 52px;
-      text-align: center;
-      margin-bottom: 10px;
-      line-height: 1;
-    }
-
-    .setup-title {
-      font-size: 26px;
-      font-weight: 800;
-      text-align: center;
-      letter-spacing: -0.5px;
-      margin-bottom: 6px;
-    }
-
-    .setup-subtitle {
-      font-size: 14px;
-      color: var(--text-mid);
-      text-align: center;
-      line-height: 1.6;
-      margin-bottom: 28px;
-    }
-
+    .setup-logo { font-size: 52px; text-align: center; margin-bottom: 10px; line-height: 1; }
+    .setup-title { font-size: 26px; font-weight: 800; text-align: center; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .setup-subtitle { font-size: 14px; color: var(--text-mid); text-align: center; line-height: 1.6; margin-bottom: 28px; }
     .setup-section-label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-light);
-      margin-bottom: 10px;
-      margin-top: 20px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--text-light); margin-bottom: 10px; margin-top: 20px;
     }
-
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .field-row {
-      display: flex;
-      gap: 10px;
-    }
-
+    .field-group { display: flex; flex-direction: column; gap: 10px; }
+    .field-row { display: flex; gap: 10px; }
     .field-row .setup-input { flex: 1; }
-
     .setup-input {
-      width: 100%;
-      padding: 13px 16px;
-      border: 1.5px solid var(--border);
-      border-radius: 14px;
-      font-size: 15px;
-      font-family: inherit;
-      background: #FAFAF8;
-      outline: none;
-      color: var(--text);
+      width: 100%; padding: 13px 16px; border: 1.5px solid var(--border);
+      border-radius: 14px; font-size: 15px; font-family: inherit;
+      background: #FAFAF8; outline: none; color: var(--text);
       transition: border-color 0.18s, background 0.18s;
     }
-
-    .setup-input:focus {
-      border-color: var(--accent);
-      background: var(--white);
-    }
-
+    .setup-input:focus { border-color: var(--accent); background: var(--white); }
     .setup-input::placeholder { color: #BBBBBB; }
-
-    .api-hint {
-      font-size: 12px;
-      color: var(--text-light);
-      margin-top: 5px;
-      line-height: 1.5;
-    }
-
+    .api-hint { font-size: 12px; color: var(--text-light); margin-top: 5px; line-height: 1.5; }
     .api-hint a { color: var(--accent); text-decoration: none; }
-
     .setup-btn {
-      width: 100%;
-      padding: 16px;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 16px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 24px;
-      font-family: inherit;
-      letter-spacing: -0.2px;
+      width: 100%; padding: 16px; background: var(--accent); color: white; border: none;
+      border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer;
+      margin-top: 24px; font-family: inherit; letter-spacing: -0.2px;
       transition: background 0.18s, transform 0.1s;
     }
-
     .setup-btn:hover { background: var(--accent-dark); }
     .setup-btn:active { transform: scale(0.98); }
+    .setup-fine-print { font-size: 12px; color: var(--text-light); text-align: center; margin-top: 14px; line-height: 1.6; }
 
-    .setup-fine-print {
-      font-size: 12px;
-      color: var(--text-light);
-      text-align: center;
-      margin-top: 14px;
-      line-height: 1.6;
-    }
+    /* ── APP ── */
+    #app-screen { display: flex; flex-direction: column; background: var(--bg); }
 
-    /* ────────────────────────────
-       APP SCREEN
-    ──────────────────────────── */
-    #app-screen {
-      display: flex;
-      flex-direction: column;
-      background: var(--bg);
-    }
-
-    /* Header */
     .app-header {
-      background: var(--white);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 16px;
-      padding-top: max(10px, env(safe-area-inset-top));
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-      z-index: 10;
+      background: var(--white); border-bottom: 1px solid var(--border);
+      padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0; z-index: 10;
     }
-
-    .header-identity {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .header-identity { display: flex; align-items: center; gap: 10px; }
     .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
+      width: 40px; height: 40px; border-radius: 50%;
       background: linear-gradient(135deg, #F4A261 0%, #E8634A 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
     }
-
-    .header-text .name {
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
-      line-height: 1.2;
-    }
-
-    .header-text .status {
-      font-size: 11px;
-      color: #22C55E;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .status-dot {
-      width: 6px;
-      height: 6px;
-      background: #22C55E;
-      border-radius: 50%;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 6px;
-    }
-
+    .header-text .name { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; line-height: 1.2; }
+    .header-text .status { font-size: 11px; color: #22C55E; display: flex; align-items: center; gap: 4px; }
+    .status-dot { width: 6px; height: 6px; background: #22C55E; border-radius: 50%; }
+    .header-actions { display: flex; gap: 6px; }
     .icon-btn {
-      width: 38px;
-      height: 38px;
-      border: none;
-      background: #F0EBE4;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 17px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 38px; height: 38px; border: none; background: #F0EBE4;
+      border-radius: 50%; cursor: pointer; font-size: 17px;
+      display: flex; align-items: center; justify-content: center;
       transition: background 0.15s;
     }
-
     .icon-btn:hover { background: var(--border); }
 
-    /* Quick actions strip */
-    .quick-actions {
-      background: var(--white);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 14px;
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      flex-shrink: 0;
-      scrollbar-width: none;
+    /* ── THREAD TABS ── */
+    .thread-tabs {
+      background: var(--white); border-bottom: 1px solid var(--border);
+      padding: 10px 14px; display: flex; gap: 8px;
+      overflow-x: auto; flex-shrink: 0; scrollbar-width: none;
     }
-
-    .quick-actions::-webkit-scrollbar { display: none; }
-
-    .q-tag {
-      white-space: nowrap;
-      padding: 7px 14px;
-      border-radius: 20px;
-      border: none;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
+    .thread-tabs::-webkit-scrollbar { display: none; }
+    .t-tab {
+      white-space: nowrap; padding: 7px 14px; border-radius: 20px;
+      border: 2px solid transparent; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
       transition: filter 0.15s, transform 0.1s;
-      letter-spacing: -0.1px;
+      letter-spacing: -0.1px; opacity: 0.7;
     }
+    .t-tab:active { transform: scale(0.95); }
+    .t-tab.active { opacity: 1; border-color: currentColor; }
+    .t-chat     { background: var(--tag-gray-bg); color: var(--tag-gray); }
+    .t-briefing { background: var(--tag-pink-bg); color: var(--tag-pink); }
+    .t-school   { background: var(--tag-green-bg); color: var(--tag-green); }
+    .t-todos    { background: var(--tag-blue-bg); color: var(--tag-blue); }
+    .t-remind   { background: var(--tag-amber-bg); color: var(--tag-amber); }
+    .t-share    { background: var(--tag-purple-bg); color: var(--tag-purple); }
 
-    .q-tag:active { transform: scale(0.95); filter: brightness(0.95); }
-    .q-briefing { background: var(--tag-pink-bg); color: var(--tag-pink); }
-    .q-school   { background: var(--tag-green-bg); color: var(--tag-green); }
-    .q-todos    { background: var(--tag-blue-bg); color: var(--tag-blue); }
-    .q-remind   { background: var(--tag-amber-bg); color: var(--tag-amber); }
-    .q-share    { background: var(--tag-purple-bg); color: var(--tag-purple); }
-
-    /* Chat area */
+    /* ── CHAT AREA ── */
     .chat-area {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px 14px 8px;
-      display: flex;
-      flex-direction: column;
-      scroll-behavior: smooth;
+      flex: 1; overflow-y: auto; padding: 16px 14px 8px;
+      display: flex; flex-direction: column; scroll-behavior: smooth;
     }
-
     .chat-area::-webkit-scrollbar { width: 3px; }
     .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-    /* Welcome state */
+    /* Welcome */
     .welcome-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-      text-align: center;
-      padding: 32px 16px;
-      gap: 0;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; flex: 1; text-align: center;
+      padding: 32px 16px; gap: 0;
     }
-
     .welcome-emoji { font-size: 52px; margin-bottom: 12px; }
-
-    .welcome-title {
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      margin-bottom: 8px;
-    }
-
-    .welcome-body {
-      font-size: 14px;
-      color: var(--text-mid);
-      line-height: 1.6;
-      max-width: 280px;
-      margin-bottom: 20px;
-    }
-
-    .suggestion-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      max-width: 340px;
-    }
-
+    .welcome-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .welcome-body { font-size: 14px; color: var(--text-mid); line-height: 1.6; max-width: 280px; margin-bottom: 20px; }
+    .suggestion-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 340px; }
     .suggestion-chip {
-      padding: 8px 14px;
-      background: var(--white);
-      border: 1.5px solid var(--border);
-      border-radius: 18px;
-      font-size: 13px;
-      color: var(--text-mid);
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.15s, border-color 0.15s;
+      padding: 8px 14px; background: var(--white); border: 1.5px solid var(--border);
+      border-radius: 18px; font-size: 13px; color: var(--text-mid);
+      cursor: pointer; font-family: inherit; transition: background 0.15s, border-color 0.15s;
     }
+    .suggestion-chip:hover { background: var(--bg); border-color: var(--accent); color: var(--text); }
 
-    .suggestion-chip:hover {
-      background: var(--bg);
-      border-color: var(--accent);
-      color: var(--text);
-    }
-
-    /* Message groups */
-    .msg-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 10px;
-    }
-
+    /* Messages */
+    .msg-group { display: flex; flex-direction: column; margin-bottom: 10px; }
     .msg-group.user { align-items: flex-end; }
     .msg-group.ai   { align-items: flex-start; }
-
-    .msg-sender-name {
-      font-size: 11px;
-      color: var(--text-light);
-      margin-bottom: 4px;
-      padding: 0 6px;
-    }
-
+    .msg-sender-name { font-size: 11px; color: var(--text-light); margin-bottom: 4px; padding: 0 6px; }
     .msg-bubble {
-      max-width: 82%;
-      padding: 11px 15px;
-      border-radius: 20px;
-      font-size: 15px;
-      line-height: 1.45;
-      word-break: break-word;
-      white-space: pre-wrap;
-      margin-bottom: 2px;
+      max-width: 82%; padding: 11px 15px; border-radius: 20px;
+      font-size: 15px; line-height: 1.45; word-break: break-word;
+      white-space: pre-wrap; margin-bottom: 2px;
     }
-
     .msg-group.user .msg-bubble {
-      background: var(--accent);
-      color: white;
-      border-bottom-right-radius: 5px;
+      background: var(--accent); color: white; border-bottom-right-radius: 5px;
     }
-
-    .msg-group.user .msg-bubble:last-child {
-      border-bottom-right-radius: 20px;
-    }
-
+    .msg-group.user .msg-bubble:last-of-type { border-bottom-right-radius: 20px; }
     .msg-group.ai .msg-bubble {
-      background: var(--white);
-      color: var(--text);
-      border-bottom-left-radius: 5px;
-      box-shadow: var(--shadow-sm);
+      background: var(--white); color: var(--text);
+      border-bottom-left-radius: 5px; box-shadow: var(--shadow-sm);
+    }
+    .msg-group.ai .msg-bubble:last-of-type { border-bottom-left-radius: 20px; }
+
+    /* Search indicator */
+    .search-note {
+      font-size: 12px; color: var(--tag-blue); background: var(--tag-blue-bg);
+      padding: 4px 12px; border-radius: 12px; margin-bottom: 6px;
+      display: inline-block; max-width: 82%;
     }
 
-    .msg-group.ai .msg-bubble:last-child {
-      border-bottom-left-radius: 20px;
+    /* SMS share button */
+    .sms-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; background: var(--tag-green-bg); color: var(--tag-green);
+      border: none; border-radius: 16px; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit; margin-top: 6px;
+      transition: filter 0.15s;
     }
+    .sms-btn:hover { filter: brightness(0.95); }
 
-    /* Category divider labels (appear in chat like Ollie) */
-    .chat-category-label {
-      align-self: center;
-      padding: 7px 18px;
-      border-radius: 22px;
-      font-size: 13px;
-      font-weight: 700;
-      margin: 14px 0 6px;
-      letter-spacing: -0.1px;
-    }
-
-    /* Typing indicator */
-    .typing-group {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      margin-bottom: 10px;
-    }
-
+    /* Typing */
+    .typing-group { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
     .typing-dots {
-      background: var(--white);
-      border-radius: 20px;
-      border-bottom-left-radius: 5px;
-      padding: 12px 16px;
-      box-shadow: var(--shadow-sm);
-      display: flex;
-      gap: 5px;
-      align-items: center;
+      background: var(--white); border-radius: 20px; border-bottom-left-radius: 5px;
+      padding: 12px 16px; box-shadow: var(--shadow-sm);
+      display: flex; gap: 5px; align-items: center;
     }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      background: #C8BFB6;
-      border-radius: 50%;
-      animation: bounce 1.3s infinite ease-in-out;
+    .searching-label {
+      font-size: 12px; color: var(--tag-blue); margin-top: 4px; padding-left: 4px;
     }
-
+    .dot { width: 8px; height: 8px; background: #C8BFB6; border-radius: 50%; animation: bounce 1.3s infinite ease-in-out; }
     .dot:nth-child(2) { animation-delay: 0.18s; }
     .dot:nth-child(3) { animation-delay: 0.36s; }
-
     @keyframes bounce {
       0%, 55%, 100% { transform: translateY(0); opacity: 0.45; }
       27% { transform: translateY(-7px); opacity: 1; }
     }
 
-    /* Error bubble */
-    .error-bubble {
-      background: #FEF2F2;
-      color: #B91C1C;
-      border: 1px solid #FECACA;
-    }
+    .error-bubble { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
 
-    /* Input area */
+    /* Input */
     .input-area {
-      background: var(--white);
-      border-top: 1px solid var(--border);
-      padding: 10px 14px;
-      padding-bottom: max(10px, env(safe-area-inset-bottom));
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-      flex-shrink: 0;
+      background: var(--white); border-top: 1px solid var(--border);
+      padding: 10px 14px; padding-bottom: max(10px, env(safe-area-inset-bottom));
+      display: flex; align-items: flex-end; gap: 10px; flex-shrink: 0;
     }
-
-    .input-box {
-      flex: 1;
-      background: #F0EBE4;
-      border-radius: 22px;
-      padding: 10px 16px;
-      display: flex;
-      align-items: flex-end;
-    }
-
+    .input-box { flex: 1; background: #F0EBE4; border-radius: 22px; padding: 10px 16px; display: flex; align-items: flex-end; }
     .msg-input {
-      flex: 1;
-      border: none;
-      background: transparent;
-      font-size: 15px;
-      font-family: inherit;
-      outline: none;
-      resize: none;
-      max-height: 110px;
-      line-height: 1.45;
-      color: var(--text);
+      flex: 1; border: none; background: transparent; font-size: 15px;
+      font-family: inherit; outline: none; resize: none;
+      max-height: 110px; line-height: 1.45; color: var(--text);
     }
-
     .msg-input::placeholder { color: #B5ACA3; }
-
     .send-btn {
-      width: 40px;
-      height: 40px;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      font-size: 20px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: background 0.15s, transform 0.1s;
-      line-height: 1;
+      width: 40px; height: 40px; background: var(--accent); color: white;
+      border: none; border-radius: 50%; font-size: 20px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s, transform 0.1s; line-height: 1;
     }
-
     .send-btn:hover { background: var(--accent-dark); }
     .send-btn:active { transform: scale(0.92); }
     .send-btn:disabled { background: #D5CEC7; cursor: default; }
 
-    /* ────────────────────────────
-       SETTINGS SHEET
-    ──────────────────────────── */
+    /* ── SETTINGS ── */
     .sheet-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.38);
-      z-index: 200;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.38); z-index: 200;
+      display: flex; flex-direction: column; justify-content: flex-end;
       backdrop-filter: blur(2px);
     }
-
     .sheet-overlay.hidden { display: none; }
-
     .sheet {
-      background: var(--white);
-      border-radius: 26px 26px 0 0;
+      background: var(--white); border-radius: 26px 26px 0 0;
       padding: 20px 24px 32px;
       padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 16px));
-      max-height: 90vh;
-      overflow-y: auto;
+      max-height: 90vh; overflow-y: auto;
     }
-
-    .sheet-handle {
-      width: 40px;
-      height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      margin: 0 auto 22px;
-    }
-
-    .sheet-title {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.4px;
-      margin-bottom: 22px;
-    }
-
-    .sheet-section {
-      margin-bottom: 22px;
-    }
-
-    .sheet-section-label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-light);
-      margin-bottom: 10px;
-    }
-
-    .sheet-field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .sheet-field-row {
-      display: flex;
-      gap: 10px;
-    }
-
+    .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 22px; }
+    .sheet-title { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 22px; }
+    .sheet-section { margin-bottom: 22px; }
+    .sheet-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-light); margin-bottom: 10px; }
+    .sheet-field-group { display: flex; flex-direction: column; gap: 10px; }
+    .sheet-field-row { display: flex; gap: 10px; }
     .sheet-field-row .setup-input { flex: 1; }
-
     .sheet-action-btn {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 14px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      margin-top: 6px;
-      transition: filter 0.15s;
+      width: 100%; padding: 14px; border: none; border-radius: 14px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      font-family: inherit; margin-top: 6px; transition: filter 0.15s;
     }
-
-    .btn-save {
-      background: var(--accent);
-      color: white;
-    }
-
+    .btn-save { background: var(--accent); color: white; }
     .btn-save:hover { background: var(--accent-dark); }
-
-    .btn-danger {
-      background: #FEE2E2;
-      color: #B91C1C;
-      margin-top: 8px;
-    }
-
+    .btn-danger { background: #FEE2E2; color: #B91C1C; margin-top: 8px; }
     .btn-danger:hover { filter: brightness(0.96); }
-
     .model-select {
-      width: 100%;
-      padding: 13px 16px;
-      border: 1.5px solid var(--border);
-      border-radius: 14px;
-      font-size: 15px;
-      font-family: inherit;
-      background: #FAFAF8;
-      color: var(--text);
-      outline: none;
-      appearance: none;
-      cursor: pointer;
+      width: 100%; padding: 13px 16px; border: 1.5px solid var(--border);
+      border-radius: 14px; font-size: 15px; font-family: inherit;
+      background: #FAFAF8; color: var(--text); outline: none; appearance: none; cursor: pointer;
     }
-
     .model-select:focus { border-color: var(--accent); }
-
-    /* Textarea in settings */
     .settings-textarea {
-      width: 100%;
-      padding: 13px 16px;
-      border: 1.5px solid var(--border);
-      border-radius: 14px;
-      font-size: 14px;
-      font-family: inherit;
-      background: #FAFAF8;
-      color: var(--text);
-      outline: none;
-      resize: none;
-      height: 88px;
-      line-height: 1.5;
+      width: 100%; padding: 13px 16px; border: 1.5px solid var(--border);
+      border-radius: 14px; font-size: 14px; font-family: inherit;
+      background: #FAFAF8; color: var(--text); outline: none;
+      resize: none; height: 88px; line-height: 1.5;
     }
-
     .settings-textarea:focus { border-color: var(--accent); background: var(--white); }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 0;
+    }
+    .toggle-label { font-size: 14px; }
+    .toggle-hint { font-size: 12px; color: var(--text-light); }
+    .toggle-switch {
+      width: 48px; height: 28px; border-radius: 14px; border: none;
+      background: #D5CEC7; cursor: pointer; position: relative;
+      transition: background 0.2s;
+    }
+    .toggle-switch.on { background: #22C55E; }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 22px; height: 22px; border-radius: 50%; background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: left 0.2s;
+    }
+    .toggle-switch.on::after { left: 23px; }
 
-    /* Toast notification */
     .toast {
-      position: fixed;
-      bottom: 90px;
-      left: 50%;
+      position: fixed; bottom: 90px; left: 50%;
       transform: translateX(-50%) translateY(20px);
-      background: #1A1A1A;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      z-index: 300;
-      opacity: 0;
-      transition: opacity 0.2s, transform 0.2s;
-      pointer-events: none;
-      white-space: nowrap;
+      background: #1A1A1A; color: white; padding: 10px 20px;
+      border-radius: 20px; font-size: 14px; font-weight: 500;
+      z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none; white-space: nowrap;
     }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     @media (min-width: 480px) {
       .setup-card { padding: 40px 36px 36px; }
@@ -683,9 +317,7 @@
 </head>
 <body>
 
-<!-- ════════════════════════════
-     SETUP SCREEN
-════════════════════════════ -->
+<!-- SETUP -->
 <div id="setup-screen" class="screen">
   <div class="setup-card">
     <div class="setup-logo">🌿</div>
@@ -695,7 +327,7 @@
     <div class="setup-section-label">API Key</div>
     <div class="field-group">
       <input class="setup-input" type="password" id="s-api-key" placeholder="sk-ant-api03-...">
-      <p class="api-hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. Stored only in your browser — never sent anywhere else.</p>
+      <p class="api-hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. Stored only in your browser.</p>
     </div>
 
     <div class="setup-section-label">Your Family</div>
@@ -704,6 +336,7 @@
         <input class="setup-input" type="text" id="s-your-name" placeholder="Your name">
         <input class="setup-input" type="text" id="s-partner-name" placeholder="Partner's name">
       </div>
+      <input class="setup-input" type="text" id="s-partner-phone" placeholder="Partner's phone (for texting)">
       <input class="setup-input" type="text" id="s-kids" placeholder="Kids' names & ages  (e.g. Emma 8, Jake 5)">
     </div>
 
@@ -715,16 +348,11 @@
   </div>
 </div>
 
-
-<!-- ════════════════════════════
-     MAIN APP SCREEN
-════════════════════════════ -->
+<!-- APP -->
 <div id="app-screen" class="screen hidden">
-
-  <!-- Header -->
   <div class="app-header">
     <div class="header-identity">
-      <div class="avatar" id="header-avatar">🌿</div>
+      <div class="avatar">🌿</div>
       <div class="header-text">
         <div class="name" id="header-name">Lumi</div>
         <div class="status"><span class="status-dot"></span> Always here</div>
@@ -735,33 +363,17 @@
     </div>
   </div>
 
-  <!-- Quick action tags -->
-  <div class="quick-actions">
-    <button class="q-tag q-briefing" onclick="quickAction('briefing')">📋 Daily briefing</button>
-    <button class="q-tag q-school"   onclick="quickAction('school')">🏫 School stuff</button>
-    <button class="q-tag q-todos"    onclick="quickAction('todos')">✅ To-do list</button>
-    <button class="q-tag q-remind"   onclick="quickAction('remind')">📅 Reminders</button>
-    <button class="q-tag q-share"    onclick="quickAction('share')">💌 Share with partner</button>
+  <div class="thread-tabs" id="thread-tabs">
+    <button class="t-tab t-chat active"   data-thread="chat"     onclick="switchThread('chat')">💬 Chat</button>
+    <button class="t-tab t-briefing"       data-thread="briefing" onclick="switchThread('briefing')">📋 Daily briefing</button>
+    <button class="t-tab t-school"         data-thread="school"   onclick="switchThread('school')">🏫 School stuff</button>
+    <button class="t-tab t-todos"          data-thread="todos"    onclick="switchThread('todos')">✅ To-do list</button>
+    <button class="t-tab t-remind"         data-thread="remind"   onclick="switchThread('remind')">📅 Reminders</button>
+    <button class="t-tab t-share"          data-thread="share"    onclick="switchThread('share')">💌 Share with partner</button>
   </div>
 
-  <!-- Chat area -->
-  <div class="chat-area" id="chat-area">
-    <div class="welcome-state" id="welcome-state">
-      <div class="welcome-emoji">🌿</div>
-      <div class="welcome-title">Hi, I'm <span id="welcome-name">Lumi</span>!</div>
-      <div class="welcome-body">I'm here to help you manage family life — catching deadlines, building lists, and making sure nothing slips through the cracks.</div>
-      <div class="suggestion-grid">
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">What's coming up this week?</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">Give me a morning briefing</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">Help me build a to-do list</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">What can my husband take on?</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">I need to track a school deadline</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">Help me not forget something</button>
-      </div>
-    </div>
-  </div>
+  <div class="chat-area" id="chat-area"></div>
 
-  <!-- Input area -->
   <div class="input-area">
     <div class="input-box">
       <textarea class="msg-input" id="msg-input" rows="1" placeholder="Message Lumi…"></textarea>
@@ -770,10 +382,7 @@
   </div>
 </div>
 
-
-<!-- ════════════════════════════
-     SETTINGS SHEET
-════════════════════════════ -->
+<!-- SETTINGS -->
 <div class="sheet-overlay hidden" id="settings-overlay" onclick="overlayClick(event)">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -791,6 +400,7 @@
           <input class="setup-input" type="text" id="ss-your-name" placeholder="Your name">
           <input class="setup-input" type="text" id="ss-partner-name" placeholder="Partner's name">
         </div>
+        <input class="setup-input" type="text" id="ss-partner-phone" placeholder="Partner's phone (for texting)">
         <input class="setup-input" type="text" id="ss-kids" placeholder="Kids' names & ages">
         <input class="setup-input" type="text" id="ss-assistant-name" placeholder="Assistant name (Lumi)">
       </div>
@@ -798,7 +408,18 @@
 
     <div class="sheet-section">
       <div class="sheet-section-label">Extra Context</div>
-      <textarea class="settings-textarea" id="ss-context" placeholder="Anything else Lumi should know — your schedule patterns, school name, extracurriculars, preferences…"></textarea>
+      <textarea class="settings-textarea" id="ss-context" placeholder="Anything else your assistant should know — school name, work schedules, extracurriculars, preferences…"></textarea>
+    </div>
+
+    <div class="sheet-section">
+      <div class="sheet-section-label">Features</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Web search</div>
+          <div class="toggle-hint">Let the assistant look things up online</div>
+        </div>
+        <button class="toggle-switch on" id="ss-web-search" onclick="this.classList.toggle('on')"></button>
+      </div>
     </div>
 
     <div class="sheet-section">
@@ -811,36 +432,82 @@
     </div>
 
     <button class="sheet-action-btn btn-save" onclick="saveSettings()">Save Changes</button>
-    <button class="sheet-action-btn btn-danger" onclick="clearHistory()">Clear conversation history</button>
+    <button class="sheet-action-btn btn-danger" onclick="clearAllThreads()">Clear all conversations</button>
   </div>
 </div>
 
-
-<!-- Toast notification -->
 <div class="toast" id="toast"></div>
 
-
 <script>
+// ════════════════════════════
+// THREAD DEFINITIONS
+// ════════════════════════════
+const THREAD_META = {
+  chat:     { icon: '💬', label: 'Chat', promptHint: '' },
+  briefing: { icon: '📋', label: 'Daily briefing', promptHint: 'Focus this conversation on daily/weekly scheduling, upcoming events, and deadlines. Lead with urgency.' },
+  school:   { icon: '🏫', label: 'School stuff', promptHint: 'Focus this conversation on school-related items: deadlines, permission slips, school events, registration, teachers, supplies.' },
+  todos:    { icon: '✅', label: 'To-do list', promptHint: 'Focus this conversation on building and managing to-do lists. Organize by priority and assign ownership.' },
+  remind:   { icon: '📅', label: 'Reminders', promptHint: 'Focus this conversation on reminders — things to remember, upcoming dates, recurring tasks.' },
+  share:    { icon: '💌', label: 'Share with partner', promptHint: 'Focus this conversation on drafting messages to share with the partner. Keep messages friendly, concise, and actionable. After drafting, ask if they want to send it.' },
+};
+
+const THREAD_SUGGESTIONS = {
+  chat: [
+    "What's coming up this week?",
+    "I need to think through something",
+    "Help me prioritize today",
+    "I'm feeling overwhelmed",
+  ],
+  briefing: [
+    "Give me today's briefing",
+    "What's happening this week?",
+    "Any deadlines I should know about?",
+  ],
+  school: [
+    "What school deadlines should I be tracking?",
+    "Help me organize school paperwork",
+    "When is kindergarten registration?",
+  ],
+  todos: [
+    "Let's build my to-do list",
+    "What should my husband handle?",
+    "Help me prioritize what's on my plate",
+  ],
+  remind: [
+    "I need to remember something",
+    "What recurring things should I track?",
+    "Help me set up reminders for the week",
+  ],
+  share: [
+    "Draft a message to share this week's schedule",
+    "What tasks should I hand off to my husband?",
+    "Help me share pickup/dropoff info",
+  ],
+};
+
 // ════════════════════════════
 // STATE
 // ════════════════════════════
 let config = {};
-let apiMessages = [];     // sent to Claude API
-let displayLog = [];      // for re-rendering saved history
+let threads = {};
+let activeThread = 'chat';
 let isLoading = false;
+
+function getThread(id) {
+  if (!threads[id]) threads[id] = { apiMessages: [], displayLog: [] };
+  return threads[id];
+}
 
 // ════════════════════════════
 // INIT
 // ════════════════════════════
 function init() {
-  const saved = localStorage.getItem('lumi_config');
-  if (saved) {
-    try { config = JSON.parse(saved); } catch (e) { config = {}; }
-  }
+  try { config = JSON.parse(localStorage.getItem('lumi_config') || '{}'); } catch (e) { config = {}; }
 
   if (config.apiKey) {
     showApp();
-    restoreHistory();
+    restoreThreads();
+    renderThread(activeThread);
   } else {
     showSetup();
   }
@@ -854,59 +521,55 @@ function showSetup() {
 function showApp() {
   document.getElementById('setup-screen').classList.add('hidden');
   document.getElementById('app-screen').classList.remove('hidden');
-  updateAppIdentity();
+  updateIdentity();
 }
 
-function updateAppIdentity() {
+function updateIdentity() {
   const name = config.assistantName || 'Lumi';
   document.getElementById('header-name').textContent = name;
-  document.getElementById('welcome-name').textContent = name;
   document.getElementById('msg-input').placeholder = `Message ${name}…`;
 }
 
 // ════════════════════════════
-// SETUP
+// SETUP & SETTINGS
 // ════════════════════════════
 function saveSetup() {
   const apiKey = document.getElementById('s-api-key').value.trim();
-  if (!apiKey) {
-    showToast('Please enter your API key');
-    document.getElementById('s-api-key').focus();
-    return;
-  }
-
+  if (!apiKey) { showToast('Please enter your API key'); return; }
   config = {
     apiKey,
     yourName:      document.getElementById('s-your-name').value.trim()      || 'you',
     partnerName:   document.getElementById('s-partner-name').value.trim()   || 'your partner',
+    partnerPhone:  document.getElementById('s-partner-phone').value.trim(),
     kids:          document.getElementById('s-kids').value.trim(),
     assistantName: document.getElementById('s-assistant-name').value.trim() || 'Lumi',
     model:         'claude-sonnet-4-6',
+    webSearch:     true,
     extraContext:  '',
   };
-
   saveConfig();
   showApp();
+  renderThread('chat');
 }
 
-// ════════════════════════════
-// SETTINGS
-// ════════════════════════════
 function openSettings() {
   document.getElementById('ss-api-key').value       = config.apiKey || '';
   document.getElementById('ss-your-name').value     = config.yourName || '';
   document.getElementById('ss-partner-name').value  = config.partnerName || '';
+  document.getElementById('ss-partner-phone').value = config.partnerPhone || '';
   document.getElementById('ss-kids').value          = config.kids || '';
   document.getElementById('ss-assistant-name').value = config.assistantName || '';
   document.getElementById('ss-context').value       = config.extraContext || '';
   document.getElementById('ss-model').value         = config.model || 'claude-sonnet-4-6';
+  const wsBtn = document.getElementById('ss-web-search');
+  if (config.webSearch !== false) wsBtn.classList.add('on');
+  else wsBtn.classList.remove('on');
   document.getElementById('settings-overlay').classList.remove('hidden');
 }
 
 function overlayClick(e) {
-  if (e.target === document.getElementById('settings-overlay')) {
+  if (e.target === document.getElementById('settings-overlay'))
     document.getElementById('settings-overlay').classList.add('hidden');
-  }
 }
 
 function saveSettings() {
@@ -915,128 +578,102 @@ function saveSettings() {
     apiKey:        document.getElementById('ss-api-key').value.trim()        || config.apiKey,
     yourName:      document.getElementById('ss-your-name').value.trim()      || config.yourName,
     partnerName:   document.getElementById('ss-partner-name').value.trim()   || config.partnerName,
+    partnerPhone:  document.getElementById('ss-partner-phone').value.trim(),
     kids:          document.getElementById('ss-kids').value.trim(),
     assistantName: document.getElementById('ss-assistant-name').value.trim() || 'Lumi',
     extraContext:  document.getElementById('ss-context').value.trim(),
     model:         document.getElementById('ss-model').value,
+    webSearch:     document.getElementById('ss-web-search').classList.contains('on'),
   };
-
   saveConfig();
   document.getElementById('settings-overlay').classList.add('hidden');
-  updateAppIdentity();
+  updateIdentity();
   showToast('Settings saved');
 }
 
-function clearHistory() {
-  if (!confirm('Clear all conversation history? This cannot be undone.')) return;
-  apiMessages = [];
-  displayLog = [];
-  localStorage.removeItem('lumi_history');
-
-  const chatArea = document.getElementById('chat-area');
-  chatArea.innerHTML = '';
-  renderWelcome();
+function clearAllThreads() {
+  if (!confirm('Clear ALL conversation threads? This cannot be undone.')) return;
+  threads = {};
+  localStorage.removeItem('lumi_threads');
+  renderThread(activeThread);
   document.getElementById('settings-overlay').classList.add('hidden');
-  showToast('History cleared');
+  showToast('All threads cleared');
 }
 
-function renderWelcome() {
+function saveConfig() { localStorage.setItem('lumi_config', JSON.stringify(config)); }
+
+// ════════════════════════════
+// THREAD SWITCHING
+// ════════════════════════════
+function switchThread(threadId) {
+  activeThread = threadId;
+  document.querySelectorAll('.t-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.thread === threadId);
+  });
+  renderThread(threadId);
+  localStorage.setItem('lumi_active_thread', threadId);
+}
+
+function renderThread(threadId) {
+  const chatArea = document.getElementById('chat-area');
+  chatArea.innerHTML = '';
+  const thread = getThread(threadId);
+
+  if (thread.displayLog.length === 0) {
+    renderWelcome(threadId);
+  } else {
+    thread.displayLog.forEach(entry => {
+      if (entry.type === 'search') appendSearchNote(entry.query, false);
+      else if (entry.type === 'sms') appendSmsButton(entry.text, false);
+      else appendBubbles(entry.role, entry.texts, false, entry.isError);
+    });
+  }
+  scrollBottom();
+}
+
+function renderWelcome(threadId) {
+  const meta = THREAD_META[threadId];
+  const suggestions = THREAD_SUGGESTIONS[threadId] || [];
   const name = config.assistantName || 'Lumi';
   const chatArea = document.getElementById('chat-area');
+
+  const welcomeTexts = {
+    chat:     `I'm here to help you manage family life — catching deadlines, building lists, and making sure nothing slips through the cracks.`,
+    briefing: `Let's get you up to speed on what's happening today and this week.`,
+    school:   `Let's stay on top of school deadlines, permission slips, events, and everything in between.`,
+    todos:    `Let's organize what needs to happen and figure out who should handle what.`,
+    remind:   `Let's make sure nothing important slips through the cracks.`,
+    share:    `Let's draft something to share with ${config.partnerName || 'your partner'} — I can help you text it directly.`,
+  };
+
   chatArea.innerHTML = `
-    <div class="welcome-state" id="welcome-state">
-      <div class="welcome-emoji">🌿</div>
-      <div class="welcome-title">Hi, I'm <span>${name}</span>!</div>
-      <div class="welcome-body">I'm here to help you manage family life — catching deadlines, building lists, and making sure nothing slips through the cracks.</div>
+    <div class="welcome-state">
+      <div class="welcome-emoji">${meta.icon}</div>
+      <div class="welcome-title">${threadId === 'chat' ? `Hi, I'm ${name}!` : meta.label}</div>
+      <div class="welcome-body">${welcomeTexts[threadId] || ''}</div>
       <div class="suggestion-grid">
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">What's coming up this week?</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">Give me a morning briefing</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">Help me build a to-do list</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">What can my husband take on?</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">I need to track a school deadline</button>
-        <button class="suggestion-chip" onclick="sendText(this.textContent)">Help me not forget something</button>
+        ${suggestions.map(s => `<button class="suggestion-chip" onclick="sendText(this.textContent)">${s}</button>`).join('')}
       </div>
     </div>
   `;
 }
 
 // ════════════════════════════
-// HISTORY PERSISTENCE
+// THREAD PERSISTENCE
 // ════════════════════════════
-function restoreHistory() {
+function restoreThreads() {
   try {
-    const raw = localStorage.getItem('lumi_history');
-    if (!raw) return;
-    const data = JSON.parse(raw);
-    apiMessages = data.apiMessages || [];
-    displayLog  = data.displayLog  || [];
-
-    if (displayLog.length > 0) {
-      hideWelcome();
-      displayLog.forEach(entry => {
-        if (entry.type === 'label') {
-          appendCategoryLabel(entry.text, entry.colorClass, false);
-        } else {
-          appendBubbles(entry.role, entry.texts, false);
-        }
-      });
-      scrollBottom();
-    }
-  } catch (e) {
-    console.error('History restore failed', e);
-  }
+    const raw = localStorage.getItem('lumi_threads');
+    if (raw) threads = JSON.parse(raw);
+  } catch (e) { threads = {}; }
+  activeThread = localStorage.getItem('lumi_active_thread') || 'chat';
+  document.querySelectorAll('.t-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.thread === activeThread);
+  });
 }
 
-function persistHistory() {
-  localStorage.setItem('lumi_history', JSON.stringify({ apiMessages, displayLog }));
-}
-
-function saveConfig() {
-  localStorage.setItem('lumi_config', JSON.stringify(config));
-}
-
-// ════════════════════════════
-// QUICK ACTIONS
-// ════════════════════════════
-const QUICK_PROMPTS = {
-  briefing: `Give me a daily briefing. What should I know and be ready for today and this week? Cover upcoming events, deadlines, and any action items.`,
-  school:   `Help me stay on top of school stuff. What kinds of deadlines, permission slips, school events, or tasks should I be tracking? Ask me questions to help surface what might need attention.`,
-  todos:    `Let's work on my to-do list together. Ask me what's on my plate, then help me organize it by priority — and flag anything my husband could take on.`,
-  remind:   `Help me make sure I'm not forgetting anything important. Ask me what's coming up or what I've been meaning to do, and we'll build out a reminder list.`,
-  share:    `Help me figure out what to share with my husband. Look at what we've been talking about and help me draft a clear, friendly message that shares relevant info and divides up what each of us needs to handle.`,
-};
-
-function quickAction(type) {
-  const labels = {
-    briefing: { text: '📋 Daily briefing', cls: 'q-briefing' },
-    school:   { text: '🏫 School stuff',   cls: 'q-school' },
-    todos:    { text: '✅ To-do list',      cls: 'q-todos' },
-    remind:   { text: '📅 Reminders',       cls: 'q-remind' },
-    share:    { text: '💌 Share with partner', cls: 'q-share' },
-  };
-  const label = labels[type];
-  if (label) insertCategoryLabel(label.text, label.cls);
-  sendText(QUICK_PROMPTS[type]);
-}
-
-function insertCategoryLabel(text, colorClass) {
-  hideWelcome();
-  const chatArea = document.getElementById('chat-area');
-  const el = document.createElement('div');
-  el.className = `chat-category-label ${colorClass}`;
-  el.textContent = text;
-  chatArea.appendChild(el);
-  displayLog.push({ type: 'label', text, colorClass });
-  scrollBottom();
-}
-
-function appendCategoryLabel(text, colorClass, scroll = true) {
-  const chatArea = document.getElementById('chat-area');
-  const el = document.createElement('div');
-  el.className = `chat-category-label ${colorClass}`;
-  el.textContent = text;
-  chatArea.appendChild(el);
-  if (scroll) scrollBottom();
+function persistThreads() {
+  localStorage.setItem('lumi_threads', JSON.stringify(threads));
 }
 
 // ════════════════════════════
@@ -1049,34 +686,38 @@ function sendText(text) {
 
 async function sendMessage() {
   if (isLoading) return;
-
   const inputEl = document.getElementById('msg-input');
   const text = inputEl.value.trim();
   if (!text) return;
+  if (!config.apiKey) { showToast('Add your API key in Settings first'); openSettings(); return; }
 
-  if (!config.apiKey) {
-    showToast('Add your API key in Settings first');
-    openSettings();
-    return;
-  }
+  // Clear welcome
+  const ws = document.querySelector('.welcome-state');
+  if (ws) ws.remove();
 
-  hideWelcome();
   inputEl.value = '';
   inputEl.style.height = 'auto';
 
-  // Render user bubble
-  renderUserBubble(text);
+  const thread = getThread(activeThread);
+  appendBubbles('user', [text], true);
+  thread.apiMessages.push({ role: 'user', content: text });
 
-  // Add to API messages
-  apiMessages.push({ role: 'user', content: text });
-
-  // Show typing
   const typingEl = showTyping();
-
   isLoading = true;
   document.getElementById('send-btn').disabled = true;
 
   try {
+    const reqBody = {
+      model:      config.model || 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      system:     buildSystemPrompt(activeThread),
+      messages:   thread.apiMessages,
+    };
+
+    if (config.webSearch !== false) {
+      reqBody.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
+    }
+
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -1085,12 +726,7 @@ async function sendMessage() {
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
-      body: JSON.stringify({
-        model:      config.model || 'claude-sonnet-4-6',
-        max_tokens: 1024,
-        system:     buildSystemPrompt(),
-        messages:   apiMessages,
-      }),
+      body: JSON.stringify(reqBody),
     });
 
     if (!resp.ok) {
@@ -1099,22 +735,46 @@ async function sendMessage() {
     }
 
     const data = await resp.json();
-    const reply = data.content[0]?.text || '(no response)';
-
     typingEl.remove();
-    renderAiBubble(reply);
-    apiMessages.push({ role: 'assistant', content: reply });
 
-    // Trim context window to last 50 messages
-    if (apiMessages.length > 50) {
-      apiMessages = apiMessages.slice(apiMessages.length - 50);
+    // Extract text and search queries from content blocks
+    let replyParts = [];
+    let searchQueries = [];
+    for (const block of data.content) {
+      if (block.type === 'text' && block.text) {
+        replyParts.push(block.text);
+      } else if (block.type === 'web_search_tool_use') {
+        searchQueries.push(block.input?.query || 'web');
+      }
     }
 
-    persistHistory();
+    const replyText = replyParts.join('\n\n') || '(no response)';
+
+    // Show search indicator if searches were made
+    if (searchQueries.length > 0) {
+      appendSearchNote(searchQueries.join(', '), true);
+    }
+
+    appendBubbles('ai', [replyText], true);
+
+    // Store full content for conversation continuity
+    thread.apiMessages.push({ role: 'assistant', content: data.content });
+
+    // In "share" thread, offer SMS button
+    if (activeThread === 'share' && config.partnerPhone) {
+      appendSmsButton(replyText, true);
+    }
+
+    // Trim to last 50 messages
+    if (thread.apiMessages.length > 50) {
+      thread.apiMessages = thread.apiMessages.slice(-50);
+    }
+
+    persistThreads();
 
   } catch (err) {
     typingEl.remove();
-    renderAiBubble(`⚠️ Error: ${err.message}\n\nDouble-check your API key in Settings.`, true);
+    appendBubbles('ai', [`⚠️ Error: ${err.message}\n\nDouble-check your API key in Settings.`], true, true);
   }
 
   isLoading = false;
@@ -1124,84 +784,80 @@ async function sendMessage() {
 // ════════════════════════════
 // RENDER HELPERS
 // ════════════════════════════
-function hideWelcome() {
-  const ws = document.getElementById('welcome-state');
-  if (ws) ws.remove();
-}
-
-function renderUserBubble(text) {
-  appendBubbles('user', [text], true);
-}
-
-function renderAiBubble(text, isError = false) {
-  appendBubbles('ai', [text], true, isError);
-}
-
 function appendBubbles(role, texts, scroll = true, isError = false) {
   const chatArea = document.getElementById('chat-area');
+  const thread = getThread(activeThread);
+  const group = document.createElement('div');
+  group.className = `msg-group ${role}`;
+  group.dataset.role = role;
 
-  // Try to extend the last group if same role
-  const lastGroup = chatArea.querySelector('.msg-group:last-child');
-  if (!isError && lastGroup && lastGroup.dataset.role === role) {
-    texts.forEach(t => {
-      const bubble = makeBubble(t, isError);
-      // Fix previous bubble's border radius before adding a new one
-      const prev = lastGroup.querySelector('.msg-bubble:last-child');
-      if (prev) {
-        if (role === 'user') prev.style.borderBottomRightRadius = '5px';
-        else                 prev.style.borderBottomLeftRadius  = '5px';
-      }
-      lastGroup.appendChild(bubble);
-    });
-    // Log — merge into last log entry if same role
-    const lastLog = displayLog[displayLog.length - 1];
-    if (lastLog && lastLog.type === 'bubble' && lastLog.role === role) {
-      lastLog.texts.push(...texts);
-    } else {
-      displayLog.push({ type: 'bubble', role, texts: [...texts] });
-    }
-  } else {
-    const group = document.createElement('div');
-    group.className = `msg-group ${role}`;
-    group.dataset.role = role;
-
-    if (role === 'ai') {
-      const sender = document.createElement('div');
-      sender.className = 'msg-sender-name';
-      sender.textContent = config.assistantName || 'Lumi';
-      group.appendChild(sender);
-    }
-
-    texts.forEach(t => group.appendChild(makeBubble(t, isError)));
-    chatArea.appendChild(group);
-    displayLog.push({ type: 'bubble', role, texts: [...texts] });
+  if (role === 'ai') {
+    const sender = document.createElement('div');
+    sender.className = 'msg-sender-name';
+    sender.textContent = config.assistantName || 'Lumi';
+    group.appendChild(sender);
   }
 
+  texts.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'msg-bubble' + (isError ? ' error-bubble' : '');
+    el.textContent = t;
+    group.appendChild(el);
+  });
+
+  chatArea.appendChild(group);
+  thread.displayLog.push({ type: 'bubble', role, texts: [...texts], isError });
   if (scroll) scrollBottom();
 }
 
-function makeBubble(text, isError) {
+function appendSearchNote(query, persist) {
+  const chatArea = document.getElementById('chat-area');
   const el = document.createElement('div');
-  el.className = 'msg-bubble' + (isError ? ' error-bubble' : '');
-  el.textContent = text;
-  return el;
+  el.className = 'search-note';
+  el.textContent = `🔍 Searched: ${query}`;
+  chatArea.appendChild(el);
+  if (persist) {
+    const thread = getThread(activeThread);
+    thread.displayLog.push({ type: 'search', query });
+  }
+}
+
+function appendSmsButton(messageText, persist) {
+  const chatArea = document.getElementById('chat-area');
+  const btn = document.createElement('button');
+  btn.className = 'sms-btn';
+  btn.innerHTML = '📱 Send to ' + (config.partnerName || 'partner') + ' via text';
+  btn.onclick = () => {
+    const phone = config.partnerPhone || '';
+    const body = encodeURIComponent(messageText.substring(0, 1000));
+    window.location.href = `sms:${phone}${phone ? '&' : ''}body=${body}`;
+  };
+  chatArea.appendChild(btn);
+  if (persist) {
+    const thread = getThread(activeThread);
+    thread.displayLog.push({ type: 'sms', text: messageText });
+  }
+  scrollBottom();
 }
 
 function showTyping() {
   const chatArea = document.getElementById('chat-area');
   const group = document.createElement('div');
   group.className = 'typing-group';
-
   const name = document.createElement('div');
   name.className = 'msg-sender-name';
   name.textContent = config.assistantName || 'Lumi';
   group.appendChild(name);
-
   const dots = document.createElement('div');
   dots.className = 'typing-dots';
   dots.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
   group.appendChild(dots);
-
+  if (config.webSearch !== false) {
+    const hint = document.createElement('div');
+    hint.className = 'searching-label';
+    hint.textContent = 'may search the web…';
+    group.appendChild(hint);
+  }
   chatArea.appendChild(group);
   scrollBottom();
   return group;
@@ -1215,58 +871,50 @@ function scrollBottom() {
 // ════════════════════════════
 // SYSTEM PROMPT
 // ════════════════════════════
-function buildSystemPrompt() {
-  const name        = config.assistantName || 'Lumi';
-  const you         = config.yourName      || 'you';
-  const partner     = config.partnerName   || 'your partner';
-  const kids        = config.kids || 'children (names and ages not specified yet)';
-  const extraCtx    = config.extraContext  || '';
-  const today       = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
+function buildSystemPrompt(threadId) {
+  const name     = config.assistantName || 'Lumi';
+  const you      = config.yourName      || 'you';
+  const partner  = config.partnerName   || 'your partner';
+  const kids     = config.kids || 'children (not specified yet)';
+  const extra    = config.extraContext  || '';
+  const today    = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const meta     = THREAD_META[threadId] || {};
 
   return `You are ${name}, a warm and practical family planning assistant for ${you}.
 
 Today is ${today}.
 
 Family:
-- ${you} — the primary user texting you right now
+- ${you} — primary user
 - ${partner} — co-parent / partner
 - Kids: ${kids}
-${extraCtx ? `\nAdditional context:\n${extraCtx}` : ''}
+${extra ? `\nExtra context:\n${extra}` : ''}
+${meta.promptHint ? `\nTHIS CONVERSATION THREAD: "${meta.label}"\n${meta.promptHint}` : ''}
 
 Your purpose:
-1. Reduce ${you}'s mental load — surface what matters before it's asked
-2. Catch things that slip through: school deadlines, permission slips, RSVP dates, appointment reminders
-3. Help balance the load between ${you} and ${partner} — suggest who should own what
+1. Reduce ${you}'s mental load — surface what matters
+2. Catch things that slip: school deadlines, permission slips, RSVP dates, appointments
+3. Balance the load between ${you} and ${partner}
 4. Build and manage to-do lists by priority
-5. Give clear daily briefings when asked
-6. Draft messages to share information or tasks with ${partner}
-7. Be a calm, organized thought partner when life feels overwhelming
+5. Give clear daily briefings
+6. Draft messages to share with ${partner}
+7. Look things up online when you need current info (you have web search)
 
-Communication rules (follow these strictly):
-- Write like a trusted friend texting — warm, direct, no corporate speak
-- Keep responses SHORT and scannable — no walls of text
-- Use bullet points, short paragraphs, and occasional emojis to organize info
-- When listing tasks, always note WHO should do them (${you} vs ${partner})
-- Flag time-sensitive things clearly: ⚠️ or 📌
-- Be proactive: if you spot something important, say so
-- Ask clarifying questions when you need more info to help
-- Never write formal greetings like "Certainly!" or "Of course!" — just get to it
-
-When helping with to-do lists:
-- Organize by urgency and owner
-- Keep each item short and actionable
+Communication rules:
+- Write like a trusted friend texting — warm, direct, concise
+- Keep responses SHORT and scannable
+- Use bullet points, short paragraphs, emojis to organize
+- When listing tasks, note WHO should do them
+- Flag time-sensitive things: ⚠️ or 📌
+- Be proactive — spot important things
+- Ask questions when you need more info
+- Skip formal greetings — just get to it
+- When you search the web, summarize the key findings clearly
 
 When drafting messages for ${partner}:
-- Friendly and informational, never naggy or accusatory
-- Clear action items, not just information dumps
-
-When giving a daily briefing:
-- Lead with what's most urgent today
-- Then what's coming up this week
-- Then any to-dos or things that need attention
-- Keep it tight — ${you} is busy`;
+- Friendly and informational, never naggy
+- Clear action items, not info dumps
+- Keep it concise — these go via text message`;
 }
 
 // ════════════════════════════
@@ -1280,23 +928,17 @@ function showToast(msg) {
 }
 
 // ════════════════════════════
-// INPUT AUTO-RESIZE & KEYBOARD
+// INPUT
 // ════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
-
   input.addEventListener('input', function () {
     this.style.height = 'auto';
     this.style.height = Math.min(this.scrollHeight, 110) + 'px';
   });
-
   input.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
-
   init();
 });
 </script>
