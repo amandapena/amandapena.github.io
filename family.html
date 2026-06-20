@@ -844,16 +844,44 @@ function handleImageSelect(event) {
   if (!file.type.startsWith('image/')) { showToast('Please select an image'); return; }
   if (file.size > 10 * 1024 * 1024) { showToast('Image too large (max 10MB)'); return; }
 
+  const SUPPORTED = ['image/jpeg','image/png','image/gif','image/webp'];
+  const needsConvert = !SUPPORTED.includes(file.type);
+
   const reader = new FileReader();
   reader.onload = function(e) {
-    pendingImage = {
-      base64: e.target.result.split(',')[1],
-      mediaType: file.type,
-      name: file.name,
-      dataUrl: e.target.result,
-    };
-    showImagePreview();
-    document.getElementById('attach-btn').classList.add('has-image');
+    if (needsConvert) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const maxDim = 1600;
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        pendingImage = {
+          base64: jpegDataUrl.split(',')[1],
+          mediaType: 'image/jpeg',
+          name: file.name,
+          dataUrl: jpegDataUrl,
+        };
+        showImagePreview();
+        document.getElementById('attach-btn').classList.add('has-image');
+      };
+      img.src = e.target.result;
+    } else {
+      pendingImage = {
+        base64: e.target.result.split(',')[1],
+        mediaType: file.type,
+        name: file.name,
+        dataUrl: e.target.result,
+      };
+      showImagePreview();
+      document.getElementById('attach-btn').classList.add('has-image');
+    }
   };
   reader.readAsDataURL(file);
   event.target.value = '';
