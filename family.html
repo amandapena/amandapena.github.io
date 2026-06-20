@@ -487,13 +487,14 @@ function enterLocalMode(e) {
 // ════════════════════════════
 function initFirebase() {
   try {
-    fbApp = firebase.initializeApp(fbConfig);
+    if (firebase.apps.length) fbApp = firebase.apps[0];
+    else fbApp = firebase.initializeApp(fbConfig);
     fbAuth = firebase.auth();
     fbDb = firebase.firestore();
     fbAuth.onAuthStateChanged(onAuthChange);
   } catch (e) {
-    showScreen('firebase-setup-screen');
-    showError('fb-setup-error', 'Firebase config error: ' + e.message);
+    console.error('Firebase init error:', e);
+    showScreen('signin-screen');
   }
 }
 
@@ -559,28 +560,32 @@ function signOutUser() {
 // FAMILY
 // ════════════════════════════
 async function findFamily() {
-  const snap = await fbDb.collection('families').where('memberIds', 'array-contains', currentUser.uid).limit(1).get();
-  if (!snap.empty) {
-    familyId = snap.docs[0].id;
-    const d = snap.docs[0].data();
-    familyData = d.config || {};
-    customThreads = d.customThreads || {};
-    listenToFamily();
-    showApp();
-    return;
-  }
-  const inviteSnap = await fbDb.collection('families').where('invitedEmail', '==', currentUser.email).limit(1).get();
-  if (!inviteSnap.empty) {
-    familyId = inviteSnap.docs[0].id;
-    const d = inviteSnap.docs[0].data();
-    familyData = d.config || {};
-    customThreads = d.customThreads || {};
-    document.getElementById('family-create').style.display = 'none';
-    document.getElementById('family-join').style.display = 'block';
-    document.getElementById('family-join-info').innerHTML = `<p style="font-size:15px;margin-bottom:8px">Family created by <b>${d.members?.[Object.keys(d.members)[0]]?.name || 'your partner'}</b></p>`;
-    showFamilyBadge();
-    showScreen('family-screen');
-    return;
+  try {
+    const snap = await fbDb.collection('families').where('memberIds', 'array-contains', currentUser.uid).limit(1).get();
+    if (!snap.empty) {
+      familyId = snap.docs[0].id;
+      const d = snap.docs[0].data();
+      familyData = d.config || {};
+      customThreads = d.customThreads || {};
+      listenToFamily();
+      showApp();
+      return;
+    }
+    const inviteSnap = await fbDb.collection('families').where('invitedEmail', '==', currentUser.email).limit(1).get();
+    if (!inviteSnap.empty) {
+      familyId = inviteSnap.docs[0].id;
+      const d = inviteSnap.docs[0].data();
+      familyData = d.config || {};
+      customThreads = d.customThreads || {};
+      document.getElementById('family-create').style.display = 'none';
+      document.getElementById('family-join').style.display = 'block';
+      document.getElementById('family-join-info').innerHTML = `<p style="font-size:15px;margin-bottom:8px">Family created by <b>${d.members?.[Object.keys(d.members)[0]]?.name || 'your partner'}</b></p>`;
+      showFamilyBadge();
+      showScreen('family-screen');
+      return;
+    }
+  } catch (e) {
+    console.error('Firestore query error:', e);
   }
   document.getElementById('family-create').style.display = 'block';
   document.getElementById('family-join').style.display = 'none';
