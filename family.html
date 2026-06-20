@@ -293,12 +293,12 @@
   </div>
   <div class="thread-tabs" id="thread-tabs"></div>
   <div class="chat-area" id="chat-area"></div>
+  <div id="image-preview-area" style="padding:4px 14px;background:var(--white);border-top:1px solid var(--border);display:none"></div>
   <div class="input-area">
     <button class="attach-btn" id="attach-btn" onclick="triggerImageUpload()" title="Attach photo">📎</button>
     <div class="input-box"><textarea class="msg-input" id="msg-input" rows="1" placeholder="Message Lumi…"></textarea></div>
     <button class="send-btn" id="send-btn" onclick="sendMessage()" aria-label="Send">↑</button>
   </div>
-  <div id="image-preview-area" style="padding:0 14px;background:var(--white);border-top:1px solid var(--border);display:none"></div>
   <input type="file" id="image-input" accept="image/*" capture="environment" style="display:none" onchange="handleImageSelect(event)">
 </div>
 
@@ -689,9 +689,19 @@ function saveThread(threadId) {
     localStorage.setItem('lumi_threads_local', JSON.stringify(threads));
     return;
   }
+  const cleanMessages = thread.apiMessages.slice(-50).map(msg => {
+    if (Array.isArray(msg.content)) {
+      return { ...msg, content: msg.content.filter(b => b.type !== 'image') };
+    }
+    return msg;
+  });
+  const cleanDisplay = thread.displayLog.slice(-200).map(e => {
+    if (e.type === 'image') return { type: 'image', dataUrl: '(image)' };
+    return e;
+  });
   fbDb.collection('families').doc(familyId).collection('threads').doc(threadId).set({
-    apiMessages: thread.apiMessages.slice(-50),
-    displayLog: thread.displayLog.slice(-200),
+    apiMessages: cleanMessages,
+    displayLog: cleanDisplay,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   }, { merge: true }).catch(e => console.error('Save failed:', e));
 }
@@ -772,14 +782,14 @@ async function getOAuthToken() {
   } catch (e) { showToast('Google auth failed'); return null; }
 }
 
-async function fetchEmails() {
+async function fetchEmails(retried) {
   const token = await getOAuthToken();
   if (!token) return null;
   try {
     const listResp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=8&labelIds=INBOX', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
-    if (listResp.status === 401) { gmailToken = null; return fetchEmails(); }
+    if (listResp.status === 401 && !retried) { gmailToken = null; return fetchEmails(true); }
     if (!listResp.ok) throw new Error('Gmail API error');
     const listData = await listResp.json();
     if (!listData.messages?.length) return 'No new emails in your inbox.';
@@ -804,7 +814,7 @@ async function fetchEmails() {
 // ════════════════════════════
 // GOOGLE CALENDAR
 // ════════════════════════════
-async function fetchCalendarEvents() {
+async function fetchCalendarEvents(retried) {
   const token = await getOAuthToken();
   if (!token) return null;
   try {
@@ -816,8 +826,8 @@ async function fetchCalendarEvents() {
     const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&maxResults=20&singleEvents=true&orderBy=startTime`, {
       headers: { 'Authorization': 'Bearer ' + token }
     });
-    if (resp.status === 401) { gmailToken = null; calendarToken = null; return fetchCalendarEvents(); }
-    if (!resp.ok) throw new Error('Calendar API error');
+    if (resp.status === 401 && !retried) { gmailToken = null; calendarToken = null; return fetchCalendarEvents(true); }
+    if (!resp.ok) throw new Error('Calendar API error ' + resp.status);
     const data = await resp.json();
     if (!data.items?.length) return 'No upcoming events in the next 7 days.';
     const events = data.items.map(ev => {
@@ -844,44 +854,32 @@ function handleImageSelect(event) {
   if (!file.type.startsWith('image/')) { showToast('Please select an image'); return; }
   if (file.size > 10 * 1024 * 1024) { showToast('Image too large (max 10MB)'); return; }
 
-  const SUPPORTED = ['image/jpeg','image/png','image/gif','image/webp'];
-  const needsConvert = !SUPPORTED.includes(file.type);
-
   const reader = new FileReader();
   reader.onload = function(e) {
-    if (needsConvert) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const maxDim = 1600;
-        let w = img.width, h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-          else { w = Math.round(w * maxDim / h); h = maxDim; }
-        }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        pendingImage = {
-          base64: jpegDataUrl.split(',')[1],
-          mediaType: 'image/jpeg',
-          name: file.name,
-          dataUrl: jpegDataUrl,
-        };
-        showImagePreview();
-        document.getElementById('attach-btn').classList.add('has-image');
-      };
-      img.src = e.target.result;
-    } else {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxDim = 1200;
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const outType = ['image/png','image/gif','image/webp'].includes(file.type) ? file.type : 'image/jpeg';
+      const quality = outType === 'image/png' ? undefined : 0.82;
+      const dataUrl = canvas.toDataURL(outType, quality);
       pendingImage = {
-        base64: e.target.result.split(',')[1],
-        mediaType: file.type,
+        base64: dataUrl.split(',')[1],
+        mediaType: outType,
         name: file.name,
-        dataUrl: e.target.result,
+        dataUrl: dataUrl,
       };
       showImagePreview();
       document.getElementById('attach-btn').classList.add('has-image');
-    }
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
   event.target.value = '';
@@ -1036,52 +1034,45 @@ async function sendMessage() {
   if (ws) ws.remove();
   inputEl.value = ''; inputEl.style.height = 'auto';
 
-  // Build the user message content
-  let userContent;
+  // Capture image before clearing
+  let imageBlock = null;
   let imageForDisplay = null;
-
   if (hasImage) {
-    userContent = [
-      { type: 'image', source: { type: 'base64', media_type: pendingImage.mediaType, data: pendingImage.base64 } },
-    ];
-    if (text) userContent.push({ type: 'text', text: text });
-    else userContent.push({ type: 'text', text: 'Please look at this image and tell me what you see. If it\'s a calendar, schedule, or note, extract all the key dates, events, and details.' });
+    imageBlock = { type: 'image', source: { type: 'base64', media_type: pendingImage.mediaType, data: pendingImage.base64 } };
     imageForDisplay = pendingImage.dataUrl;
     clearPendingImage();
   }
+
+  // Save what the user actually typed for display
+  const userTypedText = text;
 
   // For inbox thread, fetch emails on first message
   if (activeThread === 'inbox' && getThread('inbox').apiMessages.length === 0) {
     showToast('Fetching your emails...');
     const emailText = await fetchEmails();
-    if (emailText) text = emailText + '\n\n---\n\nMy request: ' + text;
+    if (emailText) text = emailText + '\n\n---\n\nMy request: ' + (text || 'Summarize my emails');
   }
 
   // For calendar thread, fetch events on first message
   if (activeThread === 'calendar' && getThread('calendar').apiMessages.length === 0) {
     showToast('Fetching your calendar...');
     const calText = await fetchCalendarEvents();
-    if (calText) text = calText + '\n\n---\n\nMy request: ' + text;
+    if (calText) text = calText + '\n\n---\n\nMy request: ' + (text || 'What\'s on my calendar?');
   }
 
   const thread = getThread(activeThread);
 
-  // Display the user message
-  if (imageForDisplay) {
-    appendImageBubble(imageForDisplay, true);
-  }
-  const displayText = text.includes('My request:') ? text.split('My request: ').pop() : text;
-  if (displayText) appendBubbles('user', [displayText], true);
+  // Display the user message (show what they typed, not the prepended data)
+  if (imageForDisplay) appendImageBubble(imageForDisplay, true);
+  if (userTypedText) appendBubbles('user', [userTypedText], true);
 
-  // API message
-  if (!hasImage) {
+  // Build API content
+  let userContent;
+  if (imageBlock) {
+    userContent = [imageBlock];
+    userContent.push({ type: 'text', text: text || 'Please look at this image and tell me what you see. If it\'s a calendar, schedule, or note, extract all the key dates, events, and details.' });
+  } else {
     userContent = text;
-  } else if (text.includes('My request:')) {
-    // Already has text in userContent from image block, but also prepend email/cal data
-    userContent = [
-      { type: 'image', source: { type: 'base64', media_type: userContent[0].source.media_type, data: userContent[0].source.data } },
-      { type: 'text', text: text || 'What do you see in this image?' },
-    ];
   }
 
   thread.apiMessages.push({ role: 'user', content: userContent });
