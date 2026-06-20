@@ -418,7 +418,14 @@ const THREAD_SUGGESTIONS = {
 
 const CUSTOM_THREAD_EMOJIS = ['✈️','🏖️','🎒','🍳','🎄','🏕️','🎂','🏠','🛒','💊','🐕','⚽','🎵','📚','🧳','🎃'];
 
-let fbConfig = null;
+let fbConfig = {
+  apiKey: "AIzaSyByyNq8dkCg8NumO9anse9-o_sOVGFNnG0",
+  authDomain: "oh-toodles.firebaseapp.com",
+  projectId: "oh-toodles",
+  storageBucket: "oh-toodles.firebasestorage.app",
+  messagingSenderId: "588773504175",
+  appId: "1:588773504175:web:bf669d46fc5ec0200e905a"
+};
 let fbApp = null, fbAuth = null, fbDb = null;
 let currentUser = null;
 let familyId = null, familyData = null;
@@ -441,22 +448,6 @@ function getThread(id) {
 // INIT
 // ════════════════════════════
 function init() {
-  fbConfig = loadJson('lumi_fb_config');
-  if (!fbConfig && !localMode) {
-    const oldConfig = loadJson('lumi_config');
-    if (oldConfig && oldConfig.apiKey) {
-      localMode = true;
-      migrateFromLocal(oldConfig);
-      return;
-    }
-    showScreen('firebase-setup-screen');
-    return;
-  }
-  if (localMode || !fbConfig) {
-    localMode = true;
-    loadLocalState();
-    return;
-  }
   initFirebase();
 }
 
