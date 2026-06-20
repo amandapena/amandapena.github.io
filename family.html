@@ -501,6 +501,12 @@ function initFirebase() {
     else fbApp = firebase.initializeApp(fbConfig);
     fbAuth = firebase.auth();
     fbDb = firebase.firestore();
+    fbAuth.getRedirectResult().then(result => {
+      if (result && result.credential) {
+        gmailToken = result.credential.accessToken;
+        calendarToken = result.credential.accessToken;
+      }
+    }).catch(e => console.warn('Redirect result error:', e));
     fbAuth.onAuthStateChanged(onAuthChange);
   } catch (e) {
     console.error('Firebase init error:', e);
@@ -540,21 +546,15 @@ async function googleSignIn() {
   provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
   provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
   try {
-    const result = await fbAuth.signInWithPopup(provider);
-    const cred = result.credential;
-    if (cred) {
-      gmailToken = cred.accessToken;
-      calendarToken = cred.accessToken;
-    }
+    await fbAuth.signInWithRedirect(provider);
   } catch (e) {
     showError('signin-error', e.message);
   }
 }
 
-function signOutUser() {
+async function signOutUser() {
   if (unsubFamily) unsubFamily();
   Object.values(unsubThreads).forEach(u => u());
-  if (fbAuth) fbAuth.signOut();
   currentUser = null; familyId = null; familyData = null; threads = {}; customThreads = {};
   if (localMode) {
     localMode = false;
@@ -563,7 +563,8 @@ function signOutUser() {
     localStorage.removeItem('lumi_custom_threads');
   }
   document.getElementById('settings-overlay').classList.add('hidden');
-  init();
+  if (fbAuth) await fbAuth.signOut();
+  showScreen('signin-screen');
 }
 
 // ════════════════════════════
@@ -781,10 +782,15 @@ async function getOAuthToken() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
     provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
-    const result = await fbAuth.signInWithPopup(provider);
-    gmailToken = result.credential?.accessToken;
-    calendarToken = gmailToken;
-    return gmailToken;
+    try {
+      const result = await fbAuth.signInWithPopup(provider);
+      gmailToken = result.credential?.accessToken;
+      calendarToken = gmailToken;
+      return gmailToken;
+    } catch (popupErr) {
+      await fbAuth.signInWithRedirect(provider);
+      return null;
+    }
   } catch (e) { showToast('Google auth failed'); return null; }
 }
 
