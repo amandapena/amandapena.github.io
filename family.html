@@ -291,7 +291,17 @@
     </button>
     <div class="source-pills" id="source-pills"></div>
   </div>
-  <div class="thread-tabs" id="thread-tabs"></div>
+  <div class="thread-tabs" id="thread-tabs">
+    <button class="t-tab t-chat active" data-thread="chat" onclick="switchThread('chat')">💬 Chat</button>
+    <button class="t-tab t-inbox" data-thread="inbox" onclick="switchThread('inbox')">📧 Inbox</button>
+    <button class="t-tab t-calendar" data-thread="calendar" onclick="switchThread('calendar')">📅 Calendar</button>
+    <button class="t-tab t-briefing" data-thread="briefing" onclick="switchThread('briefing')">📋 Daily briefing</button>
+    <button class="t-tab t-school" data-thread="school" onclick="switchThread('school')">🏫 School stuff</button>
+    <button class="t-tab t-todos" data-thread="todos" onclick="switchThread('todos')">✅ To-do list</button>
+    <button class="t-tab t-remind" data-thread="remind" onclick="switchThread('remind')">📅 Reminders</button>
+    <button class="t-tab t-share" data-thread="share" onclick="switchThread('share')">💌 Share with partner</button>
+    <button class="t-tab-add" onclick="openNewThreadModal()">+ New</button>
+  </div>
   <div class="chat-area" id="chat-area"></div>
   <div id="image-preview-area" style="padding:4px 14px;background:var(--white);border-top:1px solid var(--border);display:none"></div>
   <div class="input-area">
@@ -905,9 +915,14 @@ function showScreen(id) {
 function showApp() {
   showScreen('app-screen');
   updateIdentity();
-  renderThreadTabs();
-  renderSourcePills();
+  try { renderThreadTabs(); } catch(e) { console.error('renderThreadTabs error:', e); }
+  try { renderSourcePills(); } catch(e) { console.error('renderSourcePills error:', e); }
   switchThread(activeThread);
+  // Ensure thread tabs rendered (retry after a tick for mobile Safari)
+  setTimeout(() => {
+    const tabs = document.getElementById('thread-tabs');
+    if (tabs && !tabs.children.length) renderThreadTabs();
+  }, 100);
   if (!localStorage.getItem('lumi_welcome_seen')) {
     document.getElementById('welcome-overlay').classList.remove('hidden');
   }
