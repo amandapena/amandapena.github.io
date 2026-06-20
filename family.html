@@ -219,7 +219,7 @@
 </div>
 
 <!-- SCREEN 2: SIGN IN -->
-<div id="signin-screen" class="screen center-screen hidden">
+<div id="signin-screen" class="screen center-screen">
   <div class="card">
     <div class="card-logo">🌿</div>
     <h1 class="card-title">Welcome to Lumi</h1>
@@ -458,6 +458,7 @@ function getThread(id) {
 // INIT
 // ════════════════════════════
 function init() {
+  showScreen('signin-screen');
   initFirebase();
 }
 
@@ -546,9 +547,21 @@ async function googleSignIn() {
   provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
   provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
   try {
-    await fbAuth.signInWithRedirect(provider);
-  } catch (e) {
-    showError('signin-error', e.message);
+    const result = await fbAuth.signInWithPopup(provider);
+    if (result.credential) {
+      gmailToken = result.credential.accessToken;
+      calendarToken = result.credential.accessToken;
+    }
+  } catch (popupErr) {
+    if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
+      try {
+        await fbAuth.signInWithRedirect(provider);
+      } catch (redirectErr) {
+        showError('signin-error', redirectErr.message);
+      }
+    } else {
+      showError('signin-error', popupErr.message);
+    }
   }
 }
 
