@@ -17,6 +17,7 @@
       --tag-green-bg:#D6EDD6;--tag-green:#2E6B2E;--tag-amber-bg:#FDF0CC;--tag-amber:#92600A;
       --tag-pink-bg:#FBDDE3;--tag-pink:#A3213A;--tag-blue-bg:#DCF0FD;--tag-blue:#1059A0;
       --tag-purple-bg:#EDE5FB;--tag-purple:#5B21B6;--tag-gray-bg:#ECEAE6;--tag-gray:#555;
+      --tag-teal-bg:#D1FAE5;--tag-teal:#065F46;--tag-orange-bg:#FFF3E0;--tag-orange:#E65100;
     }
     html,body{height:100%;height:100dvh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text)}
     .screen{position:fixed;inset:0;display:flex;flex-direction:column}.screen.hidden{display:none}
@@ -72,6 +73,8 @@
     .thread-tabs::-webkit-scrollbar{display:none}
     .t-tab{white-space:nowrap;padding:7px 14px;border-radius:20px;border:2px solid transparent;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:filter .15s,transform .1s;letter-spacing:-.1px;opacity:.7}
     .t-tab:active{transform:scale(.95)}.t-tab.active{opacity:1;border-color:currentColor}
+    .t-tab-add{white-space:nowrap;padding:7px 12px;border-radius:20px;border:2px dashed var(--border);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text-light);background:transparent;transition:all .15s;flex-shrink:0}
+    .t-tab-add:hover{border-color:var(--accent);color:var(--accent);background:rgba(232,99,74,.05)}
     .t-chat{background:var(--tag-gray-bg);color:var(--tag-gray)}
     .t-briefing{background:var(--tag-pink-bg);color:var(--tag-pink)}
     .t-school{background:var(--tag-green-bg);color:var(--tag-green)}
@@ -79,6 +82,21 @@
     .t-remind{background:var(--tag-amber-bg);color:var(--tag-amber)}
     .t-share{background:var(--tag-purple-bg);color:var(--tag-purple)}
     .t-inbox{background:#FFF3E0;color:#E65100}
+    .t-calendar{background:var(--tag-teal-bg);color:var(--tag-teal)}
+    .t-custom{background:#F0E6FF;color:#7C3AED}
+
+    /* Data sources bar */
+    .sources-bar{background:var(--white);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;gap:8px;align-items:center;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+    .sources-bar::-webkit-scrollbar{display:none}
+    .sources-bar.collapsed .source-pills{display:none}
+    .sources-toggle{font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0;border:none;background:none;font-family:inherit;padding:2px 0}
+    .sources-toggle:hover{color:var(--text-mid)}
+    .source-pills{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+    .source-pills::-webkit-scrollbar{display:none}
+    .source-pill{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap;background:#F5F3EF;color:var(--text-mid)}
+    .source-pill .sp-dot{width:6px;height:6px;border-radius:50%}
+    .sp-active{background:#D1FAE5;color:#065F46}.sp-active .sp-dot{background:#22C55E}
+    .sp-inactive{background:#FEF2F2;color:#991B1B}.sp-inactive .sp-dot{background:#EF4444}
 
     /* Chat */
     .chat-area{flex:1;overflow-y:auto;padding:16px 14px 8px;display:flex;flex-direction:column;scroll-behavior:smooth}
@@ -98,6 +116,7 @@
     .msg-group.user .msg-bubble:last-of-type{border-bottom-right-radius:20px}
     .msg-group.ai .msg-bubble{background:var(--white);color:var(--text);border-bottom-left-radius:5px;box-shadow:var(--shadow-sm)}
     .msg-group.ai .msg-bubble:last-of-type{border-bottom-left-radius:20px}
+    .msg-image{max-width:200px;border-radius:14px;margin-bottom:4px}
     .search-note{font-size:12px;color:var(--tag-blue);background:var(--tag-blue-bg);padding:4px 12px;border-radius:12px;margin-bottom:6px;display:inline-block;max-width:82%}
     .sms-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--tag-green-bg);color:var(--tag-green);border:none;border-radius:16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px;transition:filter .15s}
     .sms-btn:hover{filter:brightness(.95)}
@@ -113,8 +132,15 @@
     .input-box{flex:1;background:#F0EBE4;border-radius:22px;padding:10px 16px;display:flex;align-items:flex-end}
     .msg-input{flex:1;border:none;background:transparent;font-size:15px;font-family:inherit;outline:none;resize:none;max-height:110px;line-height:1.45;color:var(--text)}
     .msg-input::placeholder{color:#B5ACA3}
+    .attach-btn{width:36px;height:36px;background:none;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.5;transition:opacity .15s}
+    .attach-btn:hover{opacity:.9}
+    .attach-btn.has-image{opacity:1;position:relative}
+    .attach-btn.has-image::after{content:'';position:absolute;top:2px;right:2px;width:10px;height:10px;background:var(--accent);border-radius:50%;border:2px solid var(--white)}
     .send-btn{width:40px;height:40px;background:var(--accent);color:white;border:none;border-radius:50%;font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .1s;line-height:1}
     .send-btn:hover{background:var(--accent-dark)}.send-btn:active{transform:scale(.92)}.send-btn:disabled{background:#D5CEC7;cursor:default}
+    .image-preview{position:relative;display:inline-block;margin:6px 0}
+    .image-preview img{max-height:80px;border-radius:12px;border:2px solid var(--border)}
+    .image-preview .remove-img{position:absolute;top:-6px;right:-6px;width:22px;height:22px;background:#B91C1C;color:white;border:2px solid white;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
 
     /* Settings */
     .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:200;display:flex;flex-direction:column;justify-content:flex-end;backdrop-filter:blur(2px)}
@@ -136,6 +162,31 @@
     .model-select{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:14px;font-size:15px;font-family:inherit;background:#FAFAF8;color:var(--text);outline:none;appearance:none;cursor:pointer}
     .settings-textarea{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:14px;font-size:14px;font-family:inherit;background:#FAFAF8;color:var(--text);outline:none;resize:none;height:88px;line-height:1.5}
 
+    /* Welcome overlay */
+    .welcome-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+    .welcome-overlay.hidden{display:none}
+    .welcome-card{background:var(--white);border-radius:28px;padding:32px 24px 24px;max-width:400px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-md)}
+    .welcome-card h2{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px}
+    .welcome-card .wc-sub{font-size:14px;color:var(--text-mid);text-align:center;margin-bottom:20px}
+    .source-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+    .source-row:last-child{border-bottom:none}
+    .source-icon{font-size:24px;flex-shrink:0;width:36px;text-align:center}
+    .source-info h4{font-size:14px;font-weight:700;margin-bottom:2px}
+    .source-info p{font-size:12px;color:var(--text-mid);line-height:1.5}
+    .wc-tips{margin-top:16px}
+    .wc-tips h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:10px}
+    .wc-tip{font-size:13px;color:var(--text-mid);line-height:1.6;padding:4px 0;padding-left:16px;position:relative}
+    .wc-tip::before{content:'';position:absolute;left:0;top:11px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+    /* New thread modal */
+    .new-thread-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+    .new-thread-modal.hidden{display:none}
+    .new-thread-card{background:var(--white);border-radius:28px;padding:32px 24px 24px;max-width:380px;width:100%;box-shadow:var(--shadow-md)}
+    .emoji-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .emoji-opt{width:40px;height:40px;border-radius:12px;border:2px solid var(--border);background:var(--white);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .emoji-opt:hover{border-color:var(--accent);background:#FFF5F3}
+    .emoji-opt.selected{border-color:var(--accent);background:#FFF5F3;box-shadow:0 0 0 2px rgba(232,99,74,.2)}
+
     .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:white;padding:10px 20px;border-radius:20px;font-size:14px;font-weight:500;z-index:300;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     @media(min-width:480px){.card{padding:40px 36px 36px}.msg-bubble{max-width:75%}}
@@ -143,7 +194,7 @@
 </head>
 <body>
 
-<!-- ═══ SCREEN 1: FIREBASE SETUP ═══ -->
+<!-- SCREEN 1: FIREBASE SETUP -->
 <div id="firebase-setup-screen" class="screen center-screen hidden">
   <div class="card">
     <div class="card-logo">🔧</div>
@@ -156,6 +207,7 @@
       <li>Go to <b>Project Settings → General</b>, scroll to "Your apps", click the web icon <b>&lt;/&gt;</b> and register an app</li>
       <li>Copy the <code>firebaseConfig</code> object and paste it below</li>
       <li>In <b>Authentication → Settings → Authorized domains</b>, add <code>amandapena.github.io</code></li>
+      <li>In <b>Google Cloud Console</b>, enable the <b>Gmail API</b> and <b>Google Calendar API</b></li>
     </ol>
     <div class="sec-label">Paste your Firebase config</div>
     <textarea class="inp inp-area" id="fb-config-input" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
@@ -166,7 +218,7 @@
   </div>
 </div>
 
-<!-- ═══ SCREEN 2: SIGN IN ═══ -->
+<!-- SCREEN 2: SIGN IN -->
 <div id="signin-screen" class="screen center-screen hidden">
   <div class="card">
     <div class="card-logo">🌿</div>
@@ -181,14 +233,13 @@
   </div>
 </div>
 
-<!-- ═══ SCREEN 3: FAMILY SETUP ═══ -->
+<!-- SCREEN 3: FAMILY SETUP -->
 <div id="family-screen" class="screen center-screen hidden">
   <div class="card">
     <div class="card-logo">👨‍👩‍👧‍👦</div>
     <h1 class="card-title" id="family-screen-title">Set Up Your Family</h1>
     <div id="family-user-badge" class="user-badge" style="display:none"></div>
 
-    <!-- Create family -->
     <div id="family-create">
       <div class="sec-label">Anthropic API Key</div>
       <div class="field-group">
@@ -207,7 +258,6 @@
       <button class="btn" onclick="createFamily()">Create Family →</button>
     </div>
 
-    <!-- Join family (shown when family already exists) -->
     <div id="family-join" style="display:none">
       <p class="card-sub">You've been invited to join your family's Lumi! Tap below to join.</p>
       <div id="family-join-info"></div>
@@ -219,7 +269,7 @@
   </div>
 </div>
 
-<!-- ═══ SCREEN 4: MAIN APP ═══ -->
+<!-- SCREEN 4: MAIN APP -->
 <div id="app-screen" class="screen hidden">
   <div class="app-header">
     <div class="header-identity">
@@ -230,23 +280,66 @@
       </div>
     </div>
     <div class="header-actions">
+      <button class="icon-btn" onclick="toggleWelcomeOverlay()" title="What I'm watching">👁️</button>
       <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
       <img class="user-avatar-sm" id="user-avatar" src="" alt="You" onclick="showUserMenu()" title="Account">
     </div>
   </div>
-  <div class="thread-tabs" id="thread-tabs">
-    <button class="t-tab t-chat active" data-thread="chat" onclick="switchThread('chat')">💬 Chat</button>
-    <button class="t-tab t-inbox" data-thread="inbox" onclick="switchThread('inbox')">📧 Inbox</button>
-    <button class="t-tab t-briefing" data-thread="briefing" onclick="switchThread('briefing')">📋 Daily briefing</button>
-    <button class="t-tab t-school" data-thread="school" onclick="switchThread('school')">🏫 School stuff</button>
-    <button class="t-tab t-todos" data-thread="todos" onclick="switchThread('todos')">✅ To-do list</button>
-    <button class="t-tab t-remind" data-thread="remind" onclick="switchThread('remind')">📅 Reminders</button>
-    <button class="t-tab t-share" data-thread="share" onclick="switchThread('share')">💌 Share with partner</button>
+  <div class="sources-bar" id="sources-bar">
+    <button class="sources-toggle" id="sources-toggle" onclick="toggleSourcesBar()">
+      <span>📡 Watching</span><span id="sources-arrow">▾</span>
+    </button>
+    <div class="source-pills" id="source-pills"></div>
   </div>
+  <div class="thread-tabs" id="thread-tabs"></div>
   <div class="chat-area" id="chat-area"></div>
   <div class="input-area">
+    <button class="attach-btn" id="attach-btn" onclick="triggerImageUpload()" title="Attach photo">📎</button>
     <div class="input-box"><textarea class="msg-input" id="msg-input" rows="1" placeholder="Message Lumi…"></textarea></div>
     <button class="send-btn" id="send-btn" onclick="sendMessage()" aria-label="Send">↑</button>
+  </div>
+  <div id="image-preview-area" style="padding:0 14px;background:var(--white);border-top:1px solid var(--border);display:none"></div>
+  <input type="file" id="image-input" accept="image/*" capture="environment" style="display:none" onchange="handleImageSelect(event)">
+</div>
+
+<!-- WELCOME OVERLAY -->
+<div class="welcome-overlay hidden" id="welcome-overlay" onclick="if(event.target===this)dismissWelcome()">
+  <div class="welcome-card">
+    <div style="text-align:center;font-size:44px;margin-bottom:8px">🌿</div>
+    <h2 id="welcome-overlay-title">Here's what I'm watching</h2>
+    <p class="wc-sub">I keep an eye on these sources to help you stay on top of family life.</p>
+    <div id="welcome-sources">
+      <div class="source-row"><div class="source-icon">📧</div><div class="source-info"><h4>Gmail Inbox</h4><p>I read your recent emails and surface action items, school notices, and deadlines.</p></div></div>
+      <div class="source-row"><div class="source-icon">📅</div><div class="source-info"><h4>Google Calendar</h4><p>I check your upcoming events so I can remind you what's coming and flag conflicts.</p></div></div>
+      <div class="source-row"><div class="source-icon">🌤️</div><div class="source-info"><h4>Weather</h4><p>I look up today's forecast so I can tell you if the kids need raincoats, sunscreen, etc.</p></div></div>
+      <div class="source-row"><div class="source-icon">🔍</div><div class="source-info"><h4>Web Search</h4><p>I can look up anything — school closings, activity schedules, camp info, recipes, and more.</p></div></div>
+      <div class="source-row"><div class="source-icon">📷</div><div class="source-info"><h4>Photo Upload</h4><p>Snap a photo of a paper calendar, flyer, or note and I'll read it and add it to our plans.</p></div></div>
+    </div>
+    <div class="wc-tips">
+      <h3>Quick Tips</h3>
+      <div class="wc-tip">Use the tabs at the top to organize conversations by topic</div>
+      <div class="wc-tip">Tap the <b>+</b> tab to create custom threads (e.g., "Trip Planning")</div>
+      <div class="wc-tip">Tap 📎 to upload a photo of a paper calendar or flyer</div>
+      <div class="wc-tip">Both parents see all conversations in real time</div>
+      <div class="wc-tip">Use "Share with partner" to draft texts to send</div>
+    </div>
+    <button class="btn" onclick="dismissWelcome()" style="margin-top:20px">Got it!</button>
+  </div>
+</div>
+
+<!-- NEW THREAD MODAL -->
+<div class="new-thread-modal hidden" id="new-thread-modal" onclick="if(event.target===this)closeNewThreadModal()">
+  <div class="new-thread-card">
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:4px">Create New Thread</h2>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:16px">Add a new conversation space — like trip planning, summer camp, or meal prep.</p>
+    <div class="sec-label">Thread Name</div>
+    <input class="inp" type="text" id="nt-name" placeholder="e.g. Trip to Grandma's">
+    <div class="sec-label">Pick an Icon</div>
+    <div class="emoji-picker" id="nt-emoji-picker"></div>
+    <div class="sec-label">Focus Hint <span style="font-weight:400;text-transform:none;letter-spacing:0">(what should the AI focus on?)</span></div>
+    <input class="inp" type="text" id="nt-hint" placeholder="e.g. Help plan packing lists, travel logistics, activities">
+    <button class="btn" onclick="createCustomThread()">Create Thread</button>
+    <button class="btn btn-secondary btn-sm" onclick="closeNewThreadModal()">Cancel</button>
   </div>
 </div>
 
@@ -263,12 +356,19 @@
         <input class="inp" type="text" id="ss-assistant-name" placeholder="Assistant name">
       </div>
     </div>
+    <div class="sheet-section"><div class="sec-label">Location <span style="font-weight:400;text-transform:none;letter-spacing:0">(for weather)</span></div>
+      <input class="inp" type="text" id="ss-location" placeholder="e.g. San Diego, CA">
+    </div>
     <div class="sheet-section"><div class="sec-label">Extra Context</div>
       <textarea class="settings-textarea" id="ss-context" placeholder="School names, schedules, extracurriculars, preferences…"></textarea>
     </div>
     <div class="sheet-section"><div class="sec-label">Features</div>
       <div class="toggle-row"><div><div class="toggle-label">Web search</div><div class="toggle-hint">Look things up online</div></div>
         <button class="toggle-switch on" id="ss-web-search" onclick="this.classList.toggle('on')"></button></div>
+      <div class="toggle-row"><div><div class="toggle-label">Google Calendar</div><div class="toggle-hint">Read your calendar events</div></div>
+        <button class="toggle-switch on" id="ss-calendar" onclick="this.classList.toggle('on')"></button></div>
+      <div class="toggle-row"><div><div class="toggle-label">Weather in briefings</div><div class="toggle-hint">Include forecast in daily briefings</div></div>
+        <button class="toggle-switch on" id="ss-weather" onclick="this.classList.toggle('on')"></button></div>
     </div>
     <div class="sheet-section"><div class="sec-label">AI Model</div>
       <select class="model-select" id="ss-model">
@@ -276,6 +376,10 @@
         <option value="claude-haiku-4-5-20251001">Claude Haiku 4 — Fast</option>
         <option value="claude-opus-4-7">Claude Opus 4 — Most powerful</option>
       </select>
+    </div>
+    <div id="ss-custom-threads-section" class="sheet-section" style="display:none">
+      <div class="sec-label">Custom Threads</div>
+      <div id="ss-custom-threads-list"></div>
     </div>
     <button class="sheet-action-btn btn-save" onclick="saveSettings()">Save Changes</button>
     <button class="sheet-action-btn btn-danger" onclick="clearThread()">Clear this thread</button>
@@ -285,27 +389,26 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Firebase SDK (compat for simplicity) -->
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
 
 <script>
-// ════════════════════════════
-// THREAD DEFINITIONS
-// ════════════════════════════
 const THREAD_META = {
-  chat:     { icon:'💬', label:'Chat', hint:'' },
-  inbox:    { icon:'📧', label:'Inbox', hint:'This thread is for reviewing emails. Summarize and surface important items from the email content provided.' },
-  briefing: { icon:'📋', label:'Daily briefing', hint:'Focus on daily/weekly scheduling, upcoming events, and deadlines.' },
-  school:   { icon:'🏫', label:'School stuff', hint:'Focus on school: deadlines, permission slips, events, registration, supplies.' },
-  todos:    { icon:'✅', label:'To-do list', hint:'Focus on building and managing to-do lists. Organize by priority and assign ownership.' },
-  remind:   { icon:'📅', label:'Reminders', hint:'Focus on reminders — things to remember, upcoming dates, recurring tasks.' },
-  share:    { icon:'💌', label:'Share with partner', hint:'Draft messages to share with partner. Keep them friendly, concise, actionable.' },
+  chat:     { icon:'💬', label:'Chat', hint:'', tabClass:'t-chat' },
+  inbox:    { icon:'📧', label:'Inbox', hint:'This thread is for reviewing emails. Summarize and surface important items from the email content provided.', tabClass:'t-inbox' },
+  calendar: { icon:'📅', label:'Calendar', hint:'This thread is for reviewing calendar events. Summarize upcoming events, flag conflicts, and highlight things to prepare for.', tabClass:'t-calendar' },
+  briefing: { icon:'📋', label:'Daily briefing', hint:'Focus on daily/weekly scheduling, upcoming events, deadlines, and weather-relevant preparation.', tabClass:'t-briefing' },
+  school:   { icon:'🏫', label:'School stuff', hint:'Focus on school: deadlines, permission slips, events, registration, supplies.', tabClass:'t-school' },
+  todos:    { icon:'✅', label:'To-do list', hint:'Focus on building and managing to-do lists. Organize by priority and assign ownership.', tabClass:'t-todos' },
+  remind:   { icon:'📅', label:'Reminders', hint:'Focus on reminders — things to remember, upcoming dates, recurring tasks.', tabClass:'t-remind' },
+  share:    { icon:'💌', label:'Share with partner', hint:'Draft messages to share with partner. Keep them friendly, concise, actionable.', tabClass:'t-share' },
 };
 const THREAD_SUGGESTIONS = {
   chat:['What\'s coming up this week?','I need to think through something','Help me prioritize today'],
   inbox:['Summarize my recent emails','Any school emails I should act on?','What deadlines are in my inbox?'],
+  calendar:['What\'s on our calendar this week?','Any scheduling conflicts?','What do we need to prep for?'],
   briefing:['Give me today\'s briefing','What\'s happening this week?','Any deadlines coming up?'],
   school:['What school deadlines should I track?','Help me organize school paperwork','When is registration?'],
   todos:['Let\'s build my to-do list','What should my husband handle?','Help me prioritize'],
@@ -313,18 +416,20 @@ const THREAD_SUGGESTIONS = {
   share:['Draft a weekly schedule update','What tasks to hand off?','Share pickup/dropoff info'],
 };
 
-// ════════════════════════════
-// STATE
-// ════════════════════════════
+const CUSTOM_THREAD_EMOJIS = ['✈️','🏖️','🎒','🍳','🎄','🏕️','🎂','🏠','🛒','💊','🐕','⚽','🎵','📚','🧳','🎃'];
+
 let fbConfig = null;
 let fbApp = null, fbAuth = null, fbDb = null;
 let currentUser = null;
 let familyId = null, familyData = null;
 let threads = {};
+let customThreads = {};
 let activeThread = 'chat';
 let isLoading = false;
 let localMode = false;
 let gmailToken = null;
+let calendarToken = null;
+let pendingImage = null;
 let unsubFamily = null, unsubThreads = {};
 
 function getThread(id) {
@@ -361,18 +466,21 @@ function migrateFromLocal(oldConfig) {
     kids: oldConfig.kids || '', partnerPhone: oldConfig.partnerPhone || '',
     webSearch: oldConfig.webSearch !== false, model: oldConfig.model || 'claude-sonnet-4-6',
     extraContext: oldConfig.extraContext || '', partnerName: oldConfig.partnerName || '',
-    yourName: oldConfig.yourName || '',
+    yourName: oldConfig.yourName || '', location: oldConfig.location || '',
+    calendarEnabled: true, weatherEnabled: true,
   };
   try { const t = loadJson('lumi_threads'); if (t) threads = t; } catch(e) {}
   if (!Object.keys(threads).length) {
     try { const h = loadJson('lumi_history'); if (h) threads.chat = h; } catch(e) {}
   }
+  customThreads = loadJson('lumi_custom_threads') || {};
   showApp();
 }
 
 function loadLocalState() {
   familyData = loadJson('lumi_family') || {};
   threads = loadJson('lumi_threads_local') || {};
+  customThreads = loadJson('lumi_custom_threads') || {};
   if (familyData.apiKey) showApp();
   else showScreen('family-screen');
 }
@@ -428,10 +536,14 @@ function onAuthChange(user) {
 async function googleSignIn() {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+  provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
   try {
     const result = await fbAuth.signInWithPopup(provider);
     const cred = result.credential;
-    if (cred) gmailToken = cred.accessToken;
+    if (cred) {
+      gmailToken = cred.accessToken;
+      calendarToken = cred.accessToken;
+    }
   } catch (e) {
     showError('signin-error', e.message);
   }
@@ -441,11 +553,12 @@ function signOutUser() {
   if (unsubFamily) unsubFamily();
   Object.values(unsubThreads).forEach(u => u());
   if (fbAuth) fbAuth.signOut();
-  currentUser = null; familyId = null; familyData = null; threads = {};
+  currentUser = null; familyId = null; familyData = null; threads = {}; customThreads = {};
   if (localMode) {
     localMode = false;
     localStorage.removeItem('lumi_family');
     localStorage.removeItem('lumi_threads_local');
+    localStorage.removeItem('lumi_custom_threads');
   }
   document.getElementById('settings-overlay').classList.add('hidden');
   init();
@@ -458,7 +571,9 @@ async function findFamily() {
   const snap = await fbDb.collection('families').where('memberIds', 'array-contains', currentUser.uid).limit(1).get();
   if (!snap.empty) {
     familyId = snap.docs[0].id;
-    familyData = snap.docs[0].data().config || {};
+    const d = snap.docs[0].data();
+    familyData = d.config || {};
+    customThreads = d.customThreads || {};
     listenToFamily();
     showApp();
     return;
@@ -468,6 +583,7 @@ async function findFamily() {
     familyId = inviteSnap.docs[0].id;
     const d = inviteSnap.docs[0].data();
     familyData = d.config || {};
+    customThreads = d.customThreads || {};
     document.getElementById('family-create').style.display = 'none';
     document.getElementById('family-join').style.display = 'block';
     document.getElementById('family-join-info').innerHTML = `<p style="font-size:15px;margin-bottom:8px">Family created by <b>${d.members?.[Object.keys(d.members)[0]]?.name || 'your partner'}</b></p>`;
@@ -497,10 +613,12 @@ async function createFamily() {
     partnerPhone: document.getElementById('f-partner-phone').value.trim(),
     assistantName: document.getElementById('f-assistant-name').value.trim() || 'Lumi',
     webSearch: true, model: 'claude-sonnet-4-6', extraContext: '',
+    location: '', calendarEnabled: true, weatherEnabled: true,
   };
   const partnerEmail = document.getElementById('f-partner-email').value.trim();
   const familyDoc = {
     config,
+    customThreads: {},
     memberIds: [currentUser.uid],
     members: { [currentUser.uid]: { name: currentUser.displayName, email: currentUser.email, photo: currentUser.photoURL } },
     invitedEmail: partnerEmail || '',
@@ -544,12 +662,14 @@ function listenToFamily() {
     if (!snap.exists) return;
     const d = snap.data();
     familyData = d.config || familyData;
+    customThreads = d.customThreads || customThreads;
     updateIdentity();
+    renderThreadTabs();
   });
 }
 
 // ════════════════════════════
-// THREAD PERSISTENCE (FIRESTORE)
+// THREAD PERSISTENCE
 // ════════════════════════════
 function loadThread(threadId) {
   if (localMode || !familyId) return;
@@ -577,21 +697,87 @@ function saveThread(threadId) {
 }
 
 // ════════════════════════════
+// CUSTOM THREADS
+// ════════════════════════════
+function openNewThreadModal() {
+  document.getElementById('new-thread-modal').classList.remove('hidden');
+  document.getElementById('nt-name').value = '';
+  document.getElementById('nt-hint').value = '';
+  const picker = document.getElementById('nt-emoji-picker');
+  picker.innerHTML = CUSTOM_THREAD_EMOJIS.map((e, i) =>
+    `<button class="emoji-opt${i===0?' selected':''}" data-emoji="${e}" onclick="selectThreadEmoji(this)">${e}</button>`
+  ).join('');
+}
+
+function closeNewThreadModal() {
+  document.getElementById('new-thread-modal').classList.add('hidden');
+}
+
+function selectThreadEmoji(btn) {
+  document.querySelectorAll('#nt-emoji-picker .emoji-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function createCustomThread() {
+  const name = document.getElementById('nt-name').value.trim();
+  if (!name) { showToast('Give your thread a name'); return; }
+  const emojiBtn = document.querySelector('#nt-emoji-picker .emoji-opt.selected');
+  const icon = emojiBtn ? emojiBtn.dataset.emoji : '📌';
+  const hint = document.getElementById('nt-hint').value.trim();
+  const id = 'custom_' + Date.now();
+  customThreads[id] = { icon, label: name, hint: hint || `Focus on: ${name}`, tabClass: 't-custom' };
+
+  if (!localMode && familyId && fbDb) {
+    fbDb.collection('families').doc(familyId).update({ customThreads }).catch(e => console.error(e));
+  } else {
+    localStorage.setItem('lumi_custom_threads', JSON.stringify(customThreads));
+  }
+
+  closeNewThreadModal();
+  renderThreadTabs();
+  switchThread(id);
+  showToast(`"${name}" thread created!`);
+}
+
+function deleteCustomThread(id) {
+  if (!confirm(`Delete "${(customThreads[id]||{}).label}" thread and its conversations?`)) return;
+  delete customThreads[id];
+  delete threads[id];
+  if (!localMode && familyId && fbDb) {
+    fbDb.collection('families').doc(familyId).update({ customThreads }).catch(e => console.error(e));
+    fbDb.collection('families').doc(familyId).collection('threads').doc(id).delete().catch(e => console.error(e));
+  } else {
+    localStorage.setItem('lumi_custom_threads', JSON.stringify(customThreads));
+    localStorage.setItem('lumi_threads_local', JSON.stringify(threads));
+  }
+  if (activeThread === id) switchThread('chat');
+  renderThreadTabs();
+  showToast('Thread deleted');
+}
+
+// ════════════════════════════
 // GMAIL
 // ════════════════════════════
+async function getOAuthToken() {
+  if (gmailToken) return gmailToken;
+  try {
+    showToast('Reconnecting to Google...');
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+    provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
+    const result = await fbAuth.signInWithPopup(provider);
+    gmailToken = result.credential?.accessToken;
+    calendarToken = gmailToken;
+    return gmailToken;
+  } catch (e) { showToast('Google auth failed'); return null; }
+}
+
 async function fetchEmails() {
-  if (!gmailToken) {
-    showToast('Reconnecting Gmail…');
-    try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-      const result = await fbAuth.signInWithPopup(provider);
-      gmailToken = result.credential?.accessToken;
-    } catch (e) { showToast('Gmail auth failed'); return null; }
-  }
+  const token = await getOAuthToken();
+  if (!token) return null;
   try {
     const listResp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=8&labelIds=INBOX', {
-      headers: { 'Authorization': 'Bearer ' + gmailToken }
+      headers: { 'Authorization': 'Bearer ' + token }
     });
     if (listResp.status === 401) { gmailToken = null; return fetchEmails(); }
     if (!listResp.ok) throw new Error('Gmail API error');
@@ -600,7 +786,7 @@ async function fetchEmails() {
     const emails = [];
     for (const msg of listData.messages.slice(0, 8)) {
       const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`, {
-        headers: { 'Authorization': 'Bearer ' + gmailToken }
+        headers: { 'Authorization': 'Bearer ' + token }
       });
       if (!r.ok) continue;
       const d = await r.json();
@@ -616,6 +802,77 @@ async function fetchEmails() {
 }
 
 // ════════════════════════════
+// GOOGLE CALENDAR
+// ════════════════════════════
+async function fetchCalendarEvents() {
+  const token = await getOAuthToken();
+  if (!token) return null;
+  try {
+    const now = new Date();
+    const timeMin = now.toISOString();
+    const endDate = new Date(now);
+    endDate.setDate(endDate.getDate() + 7);
+    const timeMax = endDate.toISOString();
+    const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&maxResults=20&singleEvents=true&orderBy=startTime`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (resp.status === 401) { gmailToken = null; calendarToken = null; return fetchCalendarEvents(); }
+    if (!resp.ok) throw new Error('Calendar API error');
+    const data = await resp.json();
+    if (!data.items?.length) return 'No upcoming events in the next 7 days.';
+    const events = data.items.map(ev => {
+      const start = ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : ev.start?.date || '?';
+      return `- ${ev.summary || '(no title)'}\n  When: ${start}\n  ${ev.location ? 'Where: ' + ev.location + '\n  ' : ''}${ev.description ? 'Notes: ' + ev.description.substring(0,100) : ''}`;
+    });
+    return 'Here are my upcoming calendar events (next 7 days):\n\n' + events.join('\n\n');
+  } catch (e) {
+    console.error('Calendar fetch error:', e);
+    return null;
+  }
+}
+
+// ════════════════════════════
+// IMAGE UPLOAD
+// ════════════════════════════
+function triggerImageUpload() {
+  document.getElementById('image-input').click();
+}
+
+function handleImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Please select an image'); return; }
+  if (file.size > 10 * 1024 * 1024) { showToast('Image too large (max 10MB)'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    pendingImage = {
+      base64: e.target.result.split(',')[1],
+      mediaType: file.type,
+      name: file.name,
+      dataUrl: e.target.result,
+    };
+    showImagePreview();
+    document.getElementById('attach-btn').classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function showImagePreview() {
+  const area = document.getElementById('image-preview-area');
+  area.style.display = 'block';
+  area.innerHTML = `<div class="image-preview"><img src="${pendingImage.dataUrl}" alt="Upload"><button class="remove-img" onclick="clearPendingImage()">✕</button></div>`;
+}
+
+function clearPendingImage() {
+  pendingImage = null;
+  document.getElementById('image-preview-area').style.display = 'none';
+  document.getElementById('image-preview-area').innerHTML = '';
+  document.getElementById('attach-btn').classList.remove('has-image');
+}
+
+// ════════════════════════════
 // APP UI
 // ════════════════════════════
 function showScreen(id) {
@@ -626,13 +883,61 @@ function showScreen(id) {
 function showApp() {
   showScreen('app-screen');
   updateIdentity();
+  renderThreadTabs();
+  renderSourcePills();
   switchThread(activeThread);
+  if (!localStorage.getItem('lumi_welcome_seen')) {
+    document.getElementById('welcome-overlay').classList.remove('hidden');
+  }
 }
 
 function updateIdentity() {
   const name = familyData?.assistantName || 'Lumi';
   document.getElementById('header-name').textContent = name;
   document.getElementById('msg-input').placeholder = `Message ${name}…`;
+}
+
+function renderThreadTabs() {
+  const container = document.getElementById('thread-tabs');
+  const allThreads = { ...THREAD_META, ...customThreads };
+  let html = '';
+  for (const [id, meta] of Object.entries(allThreads)) {
+    const isActive = id === activeThread ? ' active' : '';
+    const cls = meta.tabClass || 't-custom';
+    html += `<button class="t-tab ${cls}${isActive}" data-thread="${id}" onclick="switchThread('${id}')">${meta.icon} ${meta.label}</button>`;
+  }
+  html += `<button class="t-tab-add" onclick="openNewThreadModal()">+ New</button>`;
+  container.innerHTML = html;
+}
+
+function renderSourcePills() {
+  const pills = document.getElementById('source-pills');
+  const sources = [
+    { label:'Gmail', active: !!gmailToken },
+    { label:'Calendar', active: !!calendarToken && familyData?.calendarEnabled !== false },
+    { label:'Weather', active: familyData?.weatherEnabled !== false && !!familyData?.location },
+    { label:'Web Search', active: familyData?.webSearch !== false },
+    { label:'Photos', active: true },
+  ];
+  pills.innerHTML = sources.map(s =>
+    `<div class="source-pill ${s.active ? 'sp-active' : 'sp-inactive'}"><span class="sp-dot"></span>${s.label}</div>`
+  ).join('');
+}
+
+function toggleSourcesBar() {
+  const bar = document.getElementById('sources-bar');
+  bar.classList.toggle('collapsed');
+  document.getElementById('sources-arrow').textContent = bar.classList.contains('collapsed') ? '▸' : '▾';
+}
+
+function toggleWelcomeOverlay() {
+  const overlay = document.getElementById('welcome-overlay');
+  overlay.classList.toggle('hidden');
+}
+
+function dismissWelcome() {
+  document.getElementById('welcome-overlay').classList.add('hidden');
+  localStorage.setItem('lumi_welcome_seen', '1');
 }
 
 function switchThread(threadId) {
@@ -652,6 +957,7 @@ function renderThread(threadId) {
     thread.displayLog.forEach(e => {
       if (e.type === 'search') appendSearchNote(e.query, false);
       else if (e.type === 'sms') appendSmsButton(e.text, false);
+      else if (e.type === 'image') appendImageBubble(e.dataUrl, false);
       else appendBubbles(e.role, e.texts, false, e.isError);
     });
   }
@@ -659,25 +965,29 @@ function renderThread(threadId) {
 }
 
 function renderWelcome(threadId) {
-  const meta = THREAD_META[threadId] || {};
-  const sugg = THREAD_SUGGESTIONS[threadId] || [];
+  const allMeta = { ...THREAD_META, ...customThreads };
+  const meta = allMeta[threadId] || {};
+  const sugg = THREAD_SUGGESTIONS[threadId] || (customThreads[threadId] ? ['Help me plan','What should I think about?','Make a checklist'] : []);
   const name = familyData?.assistantName || 'Lumi';
-  const partner = currentUser?.displayName || 'your partner';
   const welcomeTexts = {
     chat: 'Catching deadlines, building lists, and making sure nothing slips through the cracks.',
     inbox: `Tap a suggestion or type to have ${name} read and summarize your recent emails.`,
-    briefing: 'Get up to speed on what\'s happening today and this week.',
+    calendar: `I'll pull your Google Calendar events and help you plan around what's coming up.`,
+    briefing: 'Get up to speed on what\'s happening today and this week — including weather and prep.',
     school: 'Stay on top of school deadlines, permission slips, and events.',
     todos: 'Organize what needs to happen and who should handle what.',
     remind: 'Make sure nothing important slips through the cracks.',
     share: `Draft messages to share with ${familyData?.partnerName || 'your partner'} — send them right via text.`,
   };
+  const bodyText = welcomeTexts[threadId] || meta.hint || 'Start a conversation about ' + (meta.label || 'this topic') + '.';
+  const deleteBtn = threadId.startsWith('custom_') ? `<button style="margin-top:16px;background:none;border:none;color:var(--text-light);font-size:12px;cursor:pointer;text-decoration:underline" onclick="deleteCustomThread('${threadId}')">Delete this thread</button>` : '';
   document.getElementById('chat-area').innerHTML = `
     <div class="welcome-state">
       <div class="welcome-emoji">${meta.icon || '🌿'}</div>
       <div class="welcome-title">${threadId === 'chat' ? `Hi, I'm ${name}!` : meta.label}</div>
-      <div class="welcome-body">${welcomeTexts[threadId] || ''}</div>
+      <div class="welcome-body">${bodyText}</div>
       <div class="suggestion-grid">${sugg.map(s => `<button class="suggestion-chip" onclick="sendText(this.textContent)">${s}</button>`).join('')}</div>
+      ${deleteBtn}
     </div>`;
 }
 
@@ -690,35 +1000,74 @@ async function sendMessage() {
   if (isLoading) return;
   const inputEl = document.getElementById('msg-input');
   let text = inputEl.value.trim();
-  if (!text) return;
+  const hasImage = !!pendingImage;
+  if (!text && !hasImage) return;
   if (!familyData?.apiKey) { showToast('Add your API key in Settings'); openSettings(); return; }
 
   const ws = document.querySelector('.welcome-state');
   if (ws) ws.remove();
   inputEl.value = ''; inputEl.style.height = 'auto';
 
-  // For inbox thread, fetch emails and prepend
+  // Build the user message content
+  let userContent;
+  let imageForDisplay = null;
+
+  if (hasImage) {
+    userContent = [
+      { type: 'image', source: { type: 'base64', media_type: pendingImage.mediaType, data: pendingImage.base64 } },
+    ];
+    if (text) userContent.push({ type: 'text', text: text });
+    else userContent.push({ type: 'text', text: 'Please look at this image and tell me what you see. If it\'s a calendar, schedule, or note, extract all the key dates, events, and details.' });
+    imageForDisplay = pendingImage.dataUrl;
+    clearPendingImage();
+  }
+
+  // For inbox thread, fetch emails on first message
   if (activeThread === 'inbox' && getThread('inbox').apiMessages.length === 0) {
-    showToast('Fetching your emails…');
+    showToast('Fetching your emails...');
     const emailText = await fetchEmails();
     if (emailText) text = emailText + '\n\n---\n\nMy request: ' + text;
   }
 
+  // For calendar thread, fetch events on first message
+  if (activeThread === 'calendar' && getThread('calendar').apiMessages.length === 0) {
+    showToast('Fetching your calendar...');
+    const calText = await fetchCalendarEvents();
+    if (calText) text = calText + '\n\n---\n\nMy request: ' + text;
+  }
+
   const thread = getThread(activeThread);
-  const displayText = activeThread === 'inbox' && text.includes('My request:')
-    ? text.split('My request: ').pop() : text;
-  appendBubbles('user', [displayText], true);
-  thread.apiMessages.push({ role: 'user', content: text });
+
+  // Display the user message
+  if (imageForDisplay) {
+    appendImageBubble(imageForDisplay, true);
+  }
+  const displayText = text.includes('My request:') ? text.split('My request: ').pop() : text;
+  if (displayText) appendBubbles('user', [displayText], true);
+
+  // API message
+  if (!hasImage) {
+    userContent = text;
+  } else if (text.includes('My request:')) {
+    // Already has text in userContent from image block, but also prepend email/cal data
+    userContent = [
+      { type: 'image', source: { type: 'base64', media_type: userContent[0].source.media_type, data: userContent[0].source.data } },
+      { type: 'text', text: text || 'What do you see in this image?' },
+    ];
+  }
+
+  thread.apiMessages.push({ role: 'user', content: userContent });
 
   const typingEl = showTyping();
   isLoading = true;
   document.getElementById('send-btn').disabled = true;
 
   try {
+    const systemPrompt = await buildSystemPrompt(activeThread);
     const reqBody = {
       model: familyData.model || 'claude-sonnet-4-6',
       max_tokens: 2048,
-      system: buildSystemPrompt(activeThread),
+      system: systemPrompt,
       messages: thread.apiMessages,
     };
     if (familyData.webSearch !== false) {
@@ -754,7 +1103,7 @@ async function sendMessage() {
     saveThread(activeThread);
   } catch (err) {
     typingEl.remove();
-    appendBubbles('ai', [`⚠️ Error: ${err.message}\n\nCheck your API key in Settings.`], true, true);
+    appendBubbles('ai', [`Error: ${err.message}\n\nCheck your API key in Settings.`], true, true);
   }
   isLoading = false;
   document.getElementById('send-btn').disabled = false;
@@ -780,16 +1129,32 @@ function appendBubbles(role, texts, scroll, isError) {
   if (scroll !== false) { thread.displayLog.push({ type:'bubble', role, texts:[...texts], isError }); scrollBottom(); }
 }
 
+function appendImageBubble(dataUrl, persist) {
+  const chatArea = document.getElementById('chat-area');
+  const group = document.createElement('div');
+  group.className = 'msg-group user';
+  if (currentUser) {
+    const s = document.createElement('div'); s.className = 'msg-sender-name';
+    s.textContent = currentUser.displayName?.split(' ')[0] || 'You'; group.appendChild(s);
+  }
+  const img = document.createElement('img');
+  img.src = dataUrl; img.className = 'msg-image'; img.alt = 'Uploaded photo';
+  group.appendChild(img);
+  chatArea.appendChild(group);
+  if (persist) getThread(activeThread).displayLog.push({ type:'image', dataUrl });
+  scrollBottom();
+}
+
 function appendSearchNote(query, persist) {
   const el = document.createElement('div'); el.className = 'search-note';
-  el.textContent = '🔍 Searched: ' + query;
+  el.textContent = 'Searched: ' + query;
   document.getElementById('chat-area').appendChild(el);
   if (persist) getThread(activeThread).displayLog.push({ type:'search', query });
 }
 
 function appendSmsButton(text, persist) {
   const btn = document.createElement('button'); btn.className = 'sms-btn';
-  btn.innerHTML = '📱 Send to ' + (familyData?.partnerName || 'partner') + ' via text';
+  btn.innerHTML = 'Send to ' + (familyData?.partnerName || 'partner') + ' via text';
   btn.onclick = () => { const p = familyData?.partnerPhone || ''; window.location.href = `sms:${p}${p?'&':''}body=${encodeURIComponent(text.substring(0,1000))}`; };
   document.getElementById('chat-area').appendChild(btn);
   if (persist) getThread(activeThread).displayLog.push({ type:'sms', text });
@@ -800,7 +1165,7 @@ function showTyping() {
   const g = document.createElement('div'); g.className = 'typing-group';
   const n = document.createElement('div'); n.className = 'msg-sender-name'; n.textContent = familyData?.assistantName || 'Lumi'; g.appendChild(n);
   const d = document.createElement('div'); d.className = 'typing-dots'; d.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>'; g.appendChild(d);
-  if (familyData?.webSearch !== false) { const h = document.createElement('div'); h.className = 'searching-label'; h.textContent = 'may search the web…'; g.appendChild(h); }
+  if (familyData?.webSearch !== false) { const h = document.createElement('div'); h.className = 'searching-label'; h.textContent = 'may search the web...'; g.appendChild(h); }
   document.getElementById('chat-area').appendChild(g); scrollBottom(); return g;
 }
 
@@ -814,10 +1179,33 @@ function openSettings() {
   document.getElementById('ss-kids').value = familyData?.kids || '';
   document.getElementById('ss-partner-phone').value = familyData?.partnerPhone || '';
   document.getElementById('ss-assistant-name').value = familyData?.assistantName || '';
+  document.getElementById('ss-location').value = familyData?.location || '';
   document.getElementById('ss-context').value = familyData?.extraContext || '';
   document.getElementById('ss-model').value = familyData?.model || 'claude-sonnet-4-6';
   const ws = document.getElementById('ss-web-search');
   familyData?.webSearch !== false ? ws.classList.add('on') : ws.classList.remove('on');
+  const cal = document.getElementById('ss-calendar');
+  familyData?.calendarEnabled !== false ? cal.classList.add('on') : cal.classList.remove('on');
+  const wea = document.getElementById('ss-weather');
+  familyData?.weatherEnabled !== false ? wea.classList.add('on') : wea.classList.remove('on');
+
+  // Show custom threads for deletion
+  const customSection = document.getElementById('ss-custom-threads-section');
+  const customList = document.getElementById('ss-custom-threads-list');
+  const customKeys = Object.keys(customThreads);
+  if (customKeys.length) {
+    customSection.style.display = 'block';
+    customList.innerHTML = customKeys.map(id => {
+      const ct = customThreads[id];
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span>${ct.icon} ${ct.label}</span>
+        <button style="background:none;border:none;color:#B91C1C;cursor:pointer;font-size:13px" onclick="deleteCustomThread('${id}')">Delete</button>
+      </div>`;
+    }).join('');
+  } else {
+    customSection.style.display = 'none';
+  }
+
   document.getElementById('settings-overlay').classList.remove('hidden');
 }
 
@@ -828,9 +1216,12 @@ function saveSettings() {
     kids: document.getElementById('ss-kids').value.trim(),
     partnerPhone: document.getElementById('ss-partner-phone').value.trim(),
     assistantName: document.getElementById('ss-assistant-name').value.trim() || 'Lumi',
+    location: document.getElementById('ss-location').value.trim(),
     extraContext: document.getElementById('ss-context').value.trim(),
     model: document.getElementById('ss-model').value,
     webSearch: document.getElementById('ss-web-search').classList.contains('on'),
+    calendarEnabled: document.getElementById('ss-calendar').classList.contains('on'),
+    weatherEnabled: document.getElementById('ss-weather').classList.contains('on'),
   };
   if (!localMode && familyId) {
     fbDb.collection('families').doc(familyId).update({ config: familyData }).catch(e => showToast('Save error: ' + e.message));
@@ -839,6 +1230,7 @@ function saveSettings() {
   }
   document.getElementById('settings-overlay').classList.add('hidden');
   updateIdentity();
+  renderSourcePills();
   showToast('Settings saved');
 }
 
@@ -856,20 +1248,48 @@ function showUserMenu() { openSettings(); }
 // ════════════════════════════
 // SYSTEM PROMPT
 // ════════════════════════════
-function buildSystemPrompt(threadId) {
+async function buildSystemPrompt(threadId) {
   const name = familyData?.assistantName || 'Lumi';
   const you = currentUser?.displayName || familyData?.yourName || 'you';
   const kids = familyData?.kids || 'children (not specified)';
   const extra = familyData?.extraContext || '';
+  const location = familyData?.location || '';
   const today = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-  const meta = THREAD_META[threadId] || {};
+  const allMeta = { ...THREAD_META, ...customThreads };
+  const meta = allMeta[threadId] || {};
+
+  let contextBlocks = '';
+
+  // For briefing thread, auto-fetch calendar and include weather location
+  if (threadId === 'briefing') {
+    if (familyData?.calendarEnabled !== false && !localMode) {
+      try {
+        const calText = await fetchCalendarEvents();
+        if (calText) contextBlocks += '\n\nCALENDAR DATA:\n' + calText;
+      } catch(e) {}
+    }
+    if (familyData?.weatherEnabled !== false && location) {
+      contextBlocks += `\n\nWEATHER: Use your web search to look up today's weather for ${location}. Include practical advice like whether kids need raincoats, sunscreen, layers, etc.`;
+    }
+  }
+
+  // For remind thread, include calendar context
+  if (threadId === 'remind' && familyData?.calendarEnabled !== false && !localMode) {
+    try {
+      const calText = await fetchCalendarEvents();
+      if (calText) contextBlocks += '\n\nUPCOMING CALENDAR EVENTS:\n' + calText;
+    } catch(e) {}
+  }
+
   return `You are ${name}, a warm family planning assistant for ${you}.
 
 Today is ${today}.
 
 Family: ${you}, partner, kids: ${kids}
+${location ? 'Location: ' + location : ''}
 ${extra ? 'Extra context: ' + extra : ''}
 ${meta.hint ? '\nTHIS THREAD: "' + meta.label + '" — ' + meta.hint : ''}
+${contextBlocks}
 
 Rules:
 - Write like a friend texting — warm, direct, concise
@@ -877,8 +1297,11 @@ Rules:
 - Note WHO should do each task
 - Flag urgent things with ⚠️
 - Skip formal greetings
-- You have web search — use it for current info
-- When summarizing emails, highlight action items, deadlines, and things that need responses`;
+- You have web search — use it for current info (weather, school schedules, events, etc.)
+- When summarizing emails, highlight action items, deadlines, and things that need responses
+- When reviewing a calendar, flag conflicts, things to prepare, and reminders
+- When a user sends a photo of a calendar or schedule, carefully extract ALL dates, events, and details
+- If location is known and this is a briefing or planning context, consider weather in your advice (e.g., pack raincoats, sunscreen)`;
 }
 
 // ════════════════════════════
