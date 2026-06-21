@@ -110,6 +110,17 @@
     .msg-group.user{align-items:flex-end}.msg-group.ai{align-items:flex-start}
     .msg-sender-name{font-size:11px;color:var(--text-light);margin-bottom:4px;padding:0 6px}
     .msg-bubble{max-width:82%;padding:11px 15px;border-radius:20px;font-size:15px;line-height:1.45;word-break:break-word;white-space:pre-wrap;margin-bottom:2px}
+    .msg-bubble strong{font-weight:700}
+    .msg-bubble em{font-style:italic}
+    .msg-bubble code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:5px;font-size:13px;font-family:monospace}
+    .msg-bubble .md-h1{font-size:18px;font-weight:800;margin:8px 0 4px;letter-spacing:-.3px}
+    .msg-bubble .md-h2{font-size:16px;font-weight:700;margin:8px 0 4px;letter-spacing:-.2px}
+    .msg-bubble .md-h3{font-size:14px;font-weight:700;margin:6px 0 2px;text-transform:uppercase;letter-spacing:.3px;color:var(--text-mid)}
+    .msg-bubble .md-li{padding-left:16px;position:relative;margin:2px 0}
+    .msg-bubble .md-li::before{content:'•';position:absolute;left:2px;color:var(--accent);font-weight:700}
+    .msg-bubble .md-li .md-num{position:absolute;left:0;color:var(--accent);font-weight:700}
+    .msg-bubble .md-li:has(.md-num)::before{display:none}
+    .msg-bubble .md-gap{height:8px}
     .msg-group.user .msg-bubble{background:var(--accent);color:white;border-bottom-right-radius:5px}
     .msg-group.user .msg-bubble:last-of-type{border-bottom-right-radius:20px}
     .msg-group.ai .msg-bubble{background:var(--white);color:var(--text);border-bottom-left-radius:5px;box-shadow:var(--shadow-sm)}
@@ -472,6 +483,14 @@ let pendingImage = null;
 let unsubFamily = null, unsubThreads = {};
 let googleConnected = false;
 
+function saveTokens() {
+  if (gmailToken) sessionStorage.setItem('toodles_oauth', gmailToken);
+}
+function restoreTokens() {
+  const t = sessionStorage.getItem('toodles_oauth');
+  if (t) { gmailToken = t; calendarToken = t; tasksToken = t; }
+}
+
 // Connection toggles stored in familyData
 // familyData.connections = { gmail: true/false, calendar: true/false, tasks: true/false, weather: true/false, search: true/false }
 
@@ -547,6 +566,7 @@ function initFirebase() {
         gmailToken = result.credential.accessToken;
         calendarToken = result.credential.accessToken;
         tasksToken = result.credential.accessToken;
+        saveTokens();
         googleConnected = true;
         renderSourcePills();
         updateConnectionsUI();
@@ -557,6 +577,7 @@ function initFirebase() {
       currentUser = user;
       if (user) {
         googleConnected = true;
+        restoreTokens();
         findFamily();
         renderSourcePills();
       }
@@ -587,6 +608,7 @@ async function connectGoogle() {
       gmailToken = result.credential.accessToken;
       calendarToken = result.credential.accessToken;
       tasksToken = result.credential.accessToken;
+      saveTokens();
     }
     googleConnected = true;
     renderSourcePills();
@@ -605,6 +627,7 @@ function disconnectGoogle() {
   if (fbAuth) fbAuth.signOut().catch(() => {});
   currentUser = null; googleConnected = false;
   gmailToken = null; calendarToken = null; tasksToken = null;
+  sessionStorage.removeItem('toodles_oauth');
   if (unsubFamily) { unsubFamily(); unsubFamily = null; }
   Object.values(unsubThreads).forEach(u => u());
   unsubThreads = {};
@@ -616,24 +639,28 @@ function disconnectGoogle() {
 
 async function getOAuthToken() {
   if (gmailToken) return gmailToken;
-  if (!googleConnected || !fbAuth) return null;
+  restoreTokens();
+  if (gmailToken) return gmailToken;
+  if (!googleConnected || !fbAuth?.currentUser) return null;
   try {
     showToast('Reconnecting to Google...');
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
     provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
     provider.addScope('https://www.googleapis.com/auth/tasks.readonly');
+    provider.setCustomParameters({ prompt: 'consent' });
     try {
-      const result = await fbAuth.signInWithPopup(provider);
+      const result = await fbAuth.currentUser.reauthenticateWithPopup(provider);
       gmailToken = result.credential?.accessToken;
       calendarToken = gmailToken;
       tasksToken = gmailToken;
+      saveTokens();
       return gmailToken;
     } catch (popupErr) {
-      await fbAuth.signInWithRedirect(provider);
+      try { await fbAuth.signInWithRedirect(provider); } catch(e) {}
       return null;
     }
-  } catch (e) { showToast('Google auth failed'); return null; }
+  } catch (e) { showToast('Google auth failed — tap 🔗 to reconnect'); return null; }
 }
 
 // ════════════════════════════
@@ -1261,6 +1288,22 @@ async function sendMessage() {
 // ════════════════════════════
 // RENDER HELPERS
 // ════════════════════════════
+function renderMarkdown(text) {
+  let html = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^### (.+)$/gm, '<div class="md-h3">$1</div>')
+    .replace(/^## (.+)$/gm, '<div class="md-h2">$1</div>')
+    .replace(/^# (.+)$/gm, '<div class="md-h1">$1</div>')
+    .replace(/^[-•] (.+)$/gm, '<div class="md-li">$1</div>')
+    .replace(/^(\d+)\. (.+)$/gm, '<div class="md-li"><span class="md-num">$1.</span> $2</div>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n{2,}/g, '<div class="md-gap"></div>')
+    .replace(/\n/g, '<br>');
+  return html;
+}
+
 function appendBubbles(role, texts, scroll, isError) {
   const chatArea = document.getElementById('chat-area');
   const thread = getThread(activeThread);
@@ -1273,7 +1316,16 @@ function appendBubbles(role, texts, scroll, isError) {
     const s = document.createElement('div'); s.className = 'msg-sender-name';
     s.textContent = (currentUser?.displayName || familyData?.yourName || 'You').split(' ')[0]; group.appendChild(s);
   }
-  texts.forEach(t => { const el = document.createElement('div'); el.className = 'msg-bubble' + (isError ? ' error-bubble' : ''); el.textContent = t; group.appendChild(el); });
+  texts.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'msg-bubble' + (isError ? ' error-bubble' : '');
+    if (role === 'ai' && !isError) {
+      el.innerHTML = renderMarkdown(t);
+    } else {
+      el.textContent = t;
+    }
+    group.appendChild(el);
+  });
   chatArea.appendChild(group);
   if (scroll !== false) { thread.displayLog.push({ type:'bubble', role, texts:[...texts], isError }); scrollBottom(); }
 }
