@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#F7F2EB">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>Lumi — Family Planner</title>
+  <title>Toodles — Family Planner</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -47,9 +47,6 @@
     .user-badge{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#F5F3EF;border-radius:14px;margin-bottom:16px}
     .user-badge img{width:32px;height:32px;border-radius:50%}
     .user-badge .ub-name{font-weight:600;font-size:14px}.user-badge .ub-email{font-size:12px;color:var(--text-light)}
-    .step-list{font-size:13px;color:var(--text-mid);line-height:1.8;padding-left:20px;margin-bottom:16px}
-    .step-list li{margin-bottom:4px}
-    .join-code{font-size:28px;font-weight:800;letter-spacing:4px;text-align:center;padding:16px;background:#F5F3EF;border-radius:14px;margin:12px 0;color:var(--accent);font-family:monospace}
     .error-msg{color:#B91C1C;font-size:13px;margin-top:8px;text-align:center}
 
     /* ── CENTERED SCREEN ── */
@@ -93,7 +90,8 @@
     .sources-toggle:hover{color:var(--text-mid)}
     .source-pills{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
     .source-pills::-webkit-scrollbar{display:none}
-    .source-pill{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap;background:#F5F3EF;color:var(--text-mid)}
+    .source-pill{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap;background:#F5F3EF;color:var(--text-mid);cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+    .source-pill:hover{filter:brightness(.95)}
     .source-pill .sp-dot{width:6px;height:6px;border-radius:50%}
     .sp-active{background:#D1FAE5;color:#065F46}.sp-active .sp-dot{background:#22C55E}
     .sp-inactive{background:#FEF2F2;color:#991B1B}.sp-inactive .sp-dot{background:#EF4444}
@@ -142,7 +140,7 @@
     .image-preview img{max-height:80px;border-radius:12px;border:2px solid var(--border)}
     .image-preview .remove-img{position:absolute;top:-6px;right:-6px;width:22px;height:22px;background:#B91C1C;color:white;border:2px solid white;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
 
-    /* Settings */
+    /* Settings / Sheet */
     .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:200;display:flex;flex-direction:column;justify-content:flex-end;backdrop-filter:blur(2px)}
     .sheet-overlay.hidden{display:none}
     .sheet{background:var(--white);border-radius:26px 26px 0 0;padding:20px 24px 32px;padding-bottom:max(32px,calc(env(safe-area-inset-bottom) + 16px));max-height:90vh;overflow-y:auto}
@@ -161,6 +159,20 @@
     .toggle-switch.on::after{left:23px}
     .model-select{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:14px;font-size:15px;font-family:inherit;background:#FAFAF8;color:var(--text);outline:none;appearance:none;cursor:pointer}
     .settings-textarea{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:14px;font-size:14px;font-family:inherit;background:#FAFAF8;color:var(--text);outline:none;resize:none;height:88px;line-height:1.5}
+
+    /* Connections card in settings */
+    .conn-card{background:#F9F7F4;border-radius:16px;padding:14px 16px;margin-bottom:10px;border:1.5px solid var(--border)}
+    .conn-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+    .conn-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
+    .conn-title .conn-icon{font-size:18px}
+    .conn-status{font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px}
+    .conn-on{background:#D1FAE5;color:#065F46}
+    .conn-off{background:#FEE2E2;color:#991B1B}
+    .conn-desc{font-size:12px;color:var(--text-mid);line-height:1.5;margin-bottom:8px}
+    .conn-btn{padding:8px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--white);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;color:var(--text)}
+    .conn-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .conn-btn-disconnect{color:#B91C1C;border-color:#FECACA}
+    .conn-btn-disconnect:hover{background:#FEF2F2}
 
     /* Welcome overlay */
     .welcome-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
@@ -194,100 +206,43 @@
 </head>
 <body>
 
-<!-- SCREEN 1: FIREBASE SETUP -->
-<div id="firebase-setup-screen" class="screen center-screen hidden">
+<!-- SCREEN 1: GET STARTED -->
+<div id="start-screen" class="screen center-screen">
   <div class="card">
-    <div class="card-logo">🔧</div>
-    <h1 class="card-title">One-Time Setup</h1>
-    <p class="card-sub">To enable shared family access and email, you need a free Firebase project. Follow these steps (takes ~10 minutes):</p>
-    <ol class="step-list">
-      <li>Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a> and create a new project</li>
-      <li>In the project, go to <b>Authentication → Sign-in method</b> and enable <b>Google</b></li>
-      <li>Go to <b>Firestore Database</b> and click <b>Create Database</b> (start in test mode)</li>
-      <li>Go to <b>Project Settings → General</b>, scroll to "Your apps", click the web icon <b>&lt;/&gt;</b> and register an app</li>
-      <li>Copy the <code>firebaseConfig</code> object and paste it below</li>
-      <li>In <b>Authentication → Settings → Authorized domains</b>, add <code>amandapena.github.io</code></li>
-      <li>In <b>Google Cloud Console</b>, enable the <b>Gmail API</b> and <b>Google Calendar API</b></li>
-    </ol>
-    <div class="sec-label">Paste your Firebase config</div>
-    <textarea class="inp inp-area" id="fb-config-input" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
-    <p class="hint">Paste the JSON object from Firebase Console. This is not secret — it's designed for client-side apps.</p>
-    <div id="fb-setup-error" class="error-msg" style="display:none"></div>
-    <button class="btn" onclick="saveFbConfig()">Save & Continue →</button>
-    <p class="fine-print">Want to skip this? <a href="#" style="color:var(--accent)" onclick="enterLocalMode(event)">Use local-only mode</a> (no sharing or email)</p>
-  </div>
-</div>
-
-<!-- SCREEN 2: SIGN IN -->
-<div id="signin-screen" class="screen center-screen">
-  <div class="card">
-    <div class="card-logo">🌿</div>
-    <h1 class="card-title">Welcome to Lumi</h1>
-    <p class="card-sub">Sign in with your Google account to get started. Both you and your partner sign in here.</p>
-    <button class="btn btn-google" onclick="googleSignIn()">
-      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 2.58 9 2.58Z"/></svg>
-      Sign in with Google
-    </button>
-    <div id="signin-error" class="error-msg" style="display:none"></div>
-    <p class="fine-print" style="margin-top:20px">Both parents sign in with their own Google account to share conversations and access email.</p>
-  </div>
-</div>
-
-<!-- SCREEN 3: FAMILY SETUP -->
-<div id="family-screen" class="screen center-screen hidden">
-  <div class="card">
-    <div class="card-logo">👨‍👩‍👧‍👦</div>
-    <h1 class="card-title" id="family-screen-title">Set Up Your Family</h1>
-    <div id="family-user-badge" class="user-badge" style="display:none"></div>
-
-    <div id="family-create">
-      <div class="sec-label">Anthropic API Key</div>
-      <div class="field-group">
-        <input class="inp" type="password" id="f-api-key" placeholder="sk-ant-api03-...">
-        <p class="hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.</p>
-      </div>
-      <div class="sec-label">Your Family</div>
-      <div class="field-group">
-        <input class="inp" type="text" id="f-kids" placeholder="Kids' names & ages  (e.g. Emma 8, Jake 5)">
-        <input class="inp" type="text" id="f-partner-phone" placeholder="Partner's phone (for texting feature)">
-      </div>
-      <div class="sec-label">Assistant Name <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
-      <input class="inp" type="text" id="f-assistant-name" placeholder="Lumi">
-      <div class="sec-label">Partner's Email <span style="font-weight:400;text-transform:none;letter-spacing:0">(so they can join)</span></div>
-      <input class="inp" type="email" id="f-partner-email" placeholder="partner@gmail.com">
-      <button class="btn" onclick="createFamily()">Create Family →</button>
+    <div class="card-logo">🐾</div>
+    <h1 class="card-title">Oh, Toodles!</h1>
+    <p class="card-sub">Your family's AI planning assistant. Enter your name and API key to get started.</p>
+    <div class="sec-label">Your Name</div>
+    <input class="inp" type="text" id="start-name" placeholder="e.g. Amanda">
+    <div class="sec-label">Anthropic API Key</div>
+    <div class="field-group">
+      <input class="inp" type="password" id="start-api-key" placeholder="sk-ant-api03-...">
+      <p class="hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
     </div>
-
-    <div id="family-join" style="display:none">
-      <p class="card-sub">You've been invited to join your family's Lumi! Tap below to join.</p>
-      <div id="family-join-info"></div>
-      <button class="btn" onclick="joinFamily()">Join Family →</button>
-    </div>
-
-    <div id="family-error" class="error-msg" style="display:none"></div>
-    <button class="btn btn-secondary btn-sm" onclick="signOutUser()">Sign out</button>
+    <button class="btn" onclick="startApp()">Let's Go! →</button>
+    <div id="start-error" class="error-msg" style="display:none"></div>
+    <p class="fine-print">You can connect Google Calendar, Gmail, and Reminders later in Settings.</p>
   </div>
 </div>
 
-<!-- SCREEN 4: MAIN APP -->
+<!-- SCREEN 2: MAIN APP -->
 <div id="app-screen" class="screen hidden">
   <div class="app-header">
     <div class="header-identity">
-      <div class="avatar">🌿</div>
+      <div class="avatar">🐾</div>
       <div class="header-text">
-        <div class="name" id="header-name">Lumi</div>
+        <div class="name" id="header-name">Toodles</div>
         <div class="status"><span class="status-dot"></span> Always here</div>
       </div>
     </div>
     <div class="header-actions">
-      <button class="icon-btn" onclick="toggleWelcomeOverlay()" title="What I'm watching">👁️</button>
+      <button class="icon-btn" onclick="openConnections()" title="Connections">🔗</button>
       <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
-      <img class="user-avatar-sm" id="user-avatar" src="" alt="You" onclick="showUserMenu()" title="Account">
     </div>
   </div>
   <div class="sources-bar" id="sources-bar">
     <button class="sources-toggle" id="sources-toggle" onclick="toggleSourcesBar()">
-      <span>📡 Watching</span><span id="sources-arrow">▾</span>
+      <span>📡 Connected</span><span id="sources-arrow">▾</span>
     </button>
     <div class="source-pills" id="source-pills"></div>
   </div>
@@ -298,7 +253,7 @@
     <button class="t-tab t-briefing" data-thread="briefing" onclick="switchThread('briefing')">📋 Daily briefing</button>
     <button class="t-tab t-school" data-thread="school" onclick="switchThread('school')">🏫 School stuff</button>
     <button class="t-tab t-todos" data-thread="todos" onclick="switchThread('todos')">✅ To-do list</button>
-    <button class="t-tab t-remind" data-thread="remind" onclick="switchThread('remind')">📅 Reminders</button>
+    <button class="t-tab t-remind" data-thread="remind" onclick="switchThread('remind')">⏰ Reminders</button>
     <button class="t-tab t-share" data-thread="share" onclick="switchThread('share')">💌 Share with partner</button>
     <button class="t-tab-add" onclick="openNewThreadModal()">+ New</button>
   </div>
@@ -306,7 +261,7 @@
   <div id="image-preview-area" style="padding:4px 14px;background:var(--white);border-top:1px solid var(--border);display:none"></div>
   <div class="input-area">
     <button class="attach-btn" id="attach-btn" onclick="triggerImageUpload()" title="Attach photo">📎</button>
-    <div class="input-box"><textarea class="msg-input" id="msg-input" rows="1" placeholder="Message Lumi…"></textarea></div>
+    <div class="input-box"><textarea class="msg-input" id="msg-input" rows="1" placeholder="Message Toodles…"></textarea></div>
     <button class="send-btn" id="send-btn" onclick="sendMessage()" aria-label="Send">↑</button>
   </div>
   <input type="file" id="image-input" accept="image/*" capture="environment" style="display:none" onchange="handleImageSelect(event)">
@@ -315,12 +270,13 @@
 <!-- WELCOME OVERLAY -->
 <div class="welcome-overlay hidden" id="welcome-overlay" onclick="if(event.target===this)dismissWelcome()">
   <div class="welcome-card">
-    <div style="text-align:center;font-size:44px;margin-bottom:8px">🌿</div>
-    <h2 id="welcome-overlay-title">Here's what I'm watching</h2>
-    <p class="wc-sub">I keep an eye on these sources to help you stay on top of family life.</p>
+    <div style="text-align:center;font-size:44px;margin-bottom:8px">🐾</div>
+    <h2 id="welcome-overlay-title">Here's what I can do</h2>
+    <p class="wc-sub">Connect your Google account in Settings to unlock even more.</p>
     <div id="welcome-sources">
       <div class="source-row"><div class="source-icon">📧</div><div class="source-info"><h4>Gmail Inbox</h4><p>I read your recent emails and surface action items, school notices, and deadlines.</p></div></div>
       <div class="source-row"><div class="source-icon">📅</div><div class="source-info"><h4>Google Calendar</h4><p>I check your upcoming events so I can remind you what's coming and flag conflicts.</p></div></div>
+      <div class="source-row"><div class="source-icon">✅</div><div class="source-info"><h4>Google Reminders/Tasks</h4><p>I pull your task lists so nothing slips through the cracks.</p></div></div>
       <div class="source-row"><div class="source-icon">🌤️</div><div class="source-info"><h4>Weather</h4><p>I look up today's forecast so I can tell you if the kids need raincoats, sunscreen, etc.</p></div></div>
       <div class="source-row"><div class="source-icon">🔍</div><div class="source-info"><h4>Web Search</h4><p>I can look up anything — school closings, activity schedules, camp info, recipes, and more.</p></div></div>
       <div class="source-row"><div class="source-icon">📷</div><div class="source-info"><h4>Photo Upload</h4><p>Snap a photo of a paper calendar, flyer, or note and I'll read it and add it to our plans.</p></div></div>
@@ -328,10 +284,9 @@
     <div class="wc-tips">
       <h3>Quick Tips</h3>
       <div class="wc-tip">Use the tabs at the top to organize conversations by topic</div>
-      <div class="wc-tip">Tap the <b>+</b> tab to create custom threads (e.g., "Trip Planning")</div>
+      <div class="wc-tip">Tap 🔗 to connect Google Calendar, Gmail, and Reminders</div>
       <div class="wc-tip">Tap 📎 to upload a photo of a paper calendar or flyer</div>
-      <div class="wc-tip">Both parents see all conversations in real time</div>
-      <div class="wc-tip">Use "Share with partner" to draft texts to send</div>
+      <div class="wc-tip">Tap <b>+</b> to create custom threads (e.g., "Trip Planning")</div>
     </div>
     <button class="btn" onclick="dismissWelcome()" style="margin-top:20px">Got it!</button>
   </div>
@@ -353,6 +308,78 @@
   </div>
 </div>
 
+<!-- CONNECTIONS SHEET -->
+<div class="sheet-overlay hidden" id="connections-overlay" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Connections</div>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:18px;line-height:1.5">Connect your Google account to unlock email, calendar, and reminders. You can toggle each one on or off.</p>
+
+    <div id="google-account-section">
+      <div class="conn-card" id="conn-google">
+        <div class="conn-header">
+          <div class="conn-title"><span class="conn-icon">🔑</span> Google Account</div>
+          <span class="conn-status conn-off" id="conn-google-status">Not connected</span>
+        </div>
+        <div class="conn-desc">Sign in with Google to enable Gmail, Calendar, and Reminders.</div>
+        <button class="conn-btn" id="conn-google-btn" onclick="connectGoogle()">Connect Google</button>
+      </div>
+    </div>
+
+    <div id="google-services-section" style="display:none">
+      <div class="conn-card">
+        <div class="conn-header">
+          <div class="conn-title"><span class="conn-icon">📧</span> Gmail</div>
+          <button class="toggle-switch" id="conn-gmail-toggle" onclick="toggleConnection('gmail')"></button>
+        </div>
+        <div class="conn-desc">Read recent inbox emails and surface action items and deadlines.</div>
+      </div>
+
+      <div class="conn-card">
+        <div class="conn-header">
+          <div class="conn-title"><span class="conn-icon">📅</span> Google Calendar</div>
+          <button class="toggle-switch" id="conn-calendar-toggle" onclick="toggleConnection('calendar')"></button>
+        </div>
+        <div class="conn-desc">Check upcoming events, flag conflicts, and prep reminders.</div>
+      </div>
+
+      <div class="conn-card">
+        <div class="conn-header">
+          <div class="conn-title"><span class="conn-icon">✅</span> Google Tasks</div>
+          <button class="toggle-switch" id="conn-tasks-toggle" onclick="toggleConnection('tasks')"></button>
+        </div>
+        <div class="conn-desc">Pull your task lists and to-dos from Google Tasks/Reminders.</div>
+      </div>
+    </div>
+
+    <div class="conn-card" style="margin-top:6px">
+      <div class="conn-header">
+        <div class="conn-title"><span class="conn-icon">🌤️</span> Weather</div>
+        <button class="toggle-switch" id="conn-weather-toggle" onclick="toggleConnection('weather')"></button>
+      </div>
+      <div class="conn-desc">Include local forecast in briefings. Set your location in Settings.</div>
+    </div>
+
+    <div class="conn-card">
+      <div class="conn-header">
+        <div class="conn-title"><span class="conn-icon">🔍</span> Web Search</div>
+        <button class="toggle-switch" id="conn-search-toggle" onclick="toggleConnection('search')"></button>
+      </div>
+      <div class="conn-desc">Look up current info — school closings, activities, recipes, etc.</div>
+    </div>
+
+    <div class="conn-card">
+      <div class="conn-header">
+        <div class="conn-title"><span class="conn-icon">📷</span> Photo Upload</div>
+        <span class="conn-status conn-on">Always on</span>
+      </div>
+      <div class="conn-desc">Snap a photo of any paper calendar, flyer, or note. Always available.</div>
+    </div>
+
+    <button class="sheet-action-btn btn-secondary" onclick="document.getElementById('connections-overlay').classList.add('hidden')">Done</button>
+  </div>
+</div>
+
 <!-- SETTINGS -->
 <div class="sheet-overlay hidden" id="settings-overlay" onclick="if(event.target===this)this.classList.add('hidden')">
   <div class="sheet">
@@ -361,24 +388,17 @@
     <div class="sheet-section"><div class="sec-label">API Key</div><input class="inp" type="password" id="ss-api-key"></div>
     <div class="sheet-section"><div class="sec-label">Your Family</div>
       <div class="field-group">
+        <input class="inp" type="text" id="ss-your-name" placeholder="Your name">
         <input class="inp" type="text" id="ss-kids" placeholder="Kids' names & ages">
         <input class="inp" type="text" id="ss-partner-phone" placeholder="Partner's phone">
-        <input class="inp" type="text" id="ss-assistant-name" placeholder="Assistant name">
+        <input class="inp" type="text" id="ss-assistant-name" placeholder="Assistant name (Toodles)">
       </div>
     </div>
     <div class="sheet-section"><div class="sec-label">Location <span style="font-weight:400;text-transform:none;letter-spacing:0">(for weather)</span></div>
-      <input class="inp" type="text" id="ss-location" placeholder="e.g. San Diego, CA">
+      <input class="inp" type="text" id="ss-location" placeholder="e.g. Woburn, MA">
     </div>
     <div class="sheet-section"><div class="sec-label">Extra Context</div>
       <textarea class="settings-textarea" id="ss-context" placeholder="School names, schedules, extracurriculars, preferences…"></textarea>
-    </div>
-    <div class="sheet-section"><div class="sec-label">Features</div>
-      <div class="toggle-row"><div><div class="toggle-label">Web search</div><div class="toggle-hint">Look things up online</div></div>
-        <button class="toggle-switch on" id="ss-web-search" onclick="this.classList.toggle('on')"></button></div>
-      <div class="toggle-row"><div><div class="toggle-label">Google Calendar</div><div class="toggle-hint">Read your calendar events</div></div>
-        <button class="toggle-switch on" id="ss-calendar" onclick="this.classList.toggle('on')"></button></div>
-      <div class="toggle-row"><div><div class="toggle-label">Weather in briefings</div><div class="toggle-hint">Include forecast in daily briefings</div></div>
-        <button class="toggle-switch on" id="ss-weather" onclick="this.classList.toggle('on')"></button></div>
     </div>
     <div class="sheet-section"><div class="sec-label">AI Model</div>
       <select class="model-select" id="ss-model">
@@ -393,13 +413,13 @@
     </div>
     <button class="sheet-action-btn btn-save" onclick="saveSettings()">Save Changes</button>
     <button class="sheet-action-btn btn-danger" onclick="clearThread()">Clear this thread</button>
-    <button class="sheet-action-btn btn-secondary" onclick="signOutUser()">Sign out</button>
+    <button class="sheet-action-btn btn-secondary" onclick="resetApp()">Sign out / Reset</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- Firebase SDK -->
+<!-- Firebase SDK (for optional Google auth + sync) -->
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
@@ -412,7 +432,7 @@ const THREAD_META = {
   briefing: { icon:'📋', label:'Daily briefing', hint:'Focus on daily/weekly scheduling, upcoming events, deadlines, and weather-relevant preparation.', tabClass:'t-briefing' },
   school:   { icon:'🏫', label:'School stuff', hint:'Focus on school: deadlines, permission slips, events, registration, supplies.', tabClass:'t-school' },
   todos:    { icon:'✅', label:'To-do list', hint:'Focus on building and managing to-do lists. Organize by priority and assign ownership.', tabClass:'t-todos' },
-  remind:   { icon:'📅', label:'Reminders', hint:'Focus on reminders — things to remember, upcoming dates, recurring tasks.', tabClass:'t-remind' },
+  remind:   { icon:'⏰', label:'Reminders', hint:'Focus on reminders — things to remember, upcoming dates, recurring tasks. Pull Google Tasks if connected.', tabClass:'t-remind' },
   share:    { icon:'💌', label:'Share with partner', hint:'Draft messages to share with partner. Keep them friendly, concise, actionable.', tabClass:'t-share' },
 };
 const THREAD_SUGGESTIONS = {
@@ -422,13 +442,13 @@ const THREAD_SUGGESTIONS = {
   briefing:['Give me today\'s briefing','What\'s happening this week?','Any deadlines coming up?'],
   school:['What school deadlines should I track?','Help me organize school paperwork','When is registration?'],
   todos:['Let\'s build my to-do list','What should my husband handle?','Help me prioritize'],
-  remind:['I need to remember something','What recurring things should I track?','Reminders for this week'],
+  remind:['What\'s on my task list?','I need to remember something','Reminders for this week'],
   share:['Draft a weekly schedule update','What tasks to hand off?','Share pickup/dropoff info'],
 };
 
 const CUSTOM_THREAD_EMOJIS = ['✈️','🏖️','🎒','🍳','🎄','🏕️','🎂','🏠','🛒','💊','🐕','⚽','🎵','📚','🧳','🎃'];
 
-let fbConfig = {
+const FB_CONFIG = {
   apiKey: "AIzaSyByyNq8dkCg8NumO9anse9-o_sOVGFNnG0",
   authDomain: "oh-toodles.firebaseapp.com",
   projectId: "oh-toodles",
@@ -436,18 +456,24 @@ let fbConfig = {
   messagingSenderId: "588773504175",
   appId: "1:588773504175:web:bf669d46fc5ec0200e905a"
 };
+
 let fbApp = null, fbAuth = null, fbDb = null;
 let currentUser = null;
-let familyId = null, familyData = null;
+let familyId = null;
+let familyData = {};
 let threads = {};
 let customThreads = {};
 let activeThread = 'chat';
 let isLoading = false;
-let localMode = false;
 let gmailToken = null;
 let calendarToken = null;
+let tasksToken = null;
 let pendingImage = null;
 let unsubFamily = null, unsubThreads = {};
+let googleConnected = false;
+
+// Connection toggles stored in familyData
+// familyData.connections = { gmail: true/false, calendar: true/false, tasks: true/false, weather: true/false, search: true/false }
 
 function getThread(id) {
   if (!threads[id]) threads[id] = { apiMessages: [], displayLog: [] };
@@ -458,221 +484,188 @@ function getThread(id) {
 // INIT
 // ════════════════════════════
 function init() {
-  showScreen('signin-screen');
-  initFirebase();
-}
-
-function migrateFromLocal(oldConfig) {
-  familyData = {
-    apiKey: oldConfig.apiKey, assistantName: oldConfig.assistantName || 'Lumi',
-    kids: oldConfig.kids || '', partnerPhone: oldConfig.partnerPhone || '',
-    webSearch: oldConfig.webSearch !== false, model: oldConfig.model || 'claude-sonnet-4-6',
-    extraContext: oldConfig.extraContext || '', partnerName: oldConfig.partnerName || '',
-    yourName: oldConfig.yourName || '', location: oldConfig.location || '',
-    calendarEnabled: true, weatherEnabled: true,
-  };
-  try { const t = loadJson('lumi_threads'); if (t) threads = t; } catch(e) {}
-  if (!Object.keys(threads).length) {
-    try { const h = loadJson('lumi_history'); if (h) threads.chat = h; } catch(e) {}
+  const saved = loadJson('toodles_family');
+  if (saved && saved.apiKey) {
+    familyData = saved;
+    threads = loadJson('toodles_threads') || {};
+    customThreads = loadJson('toodles_custom_threads') || {};
+    initFirebase();
+    showApp();
+  } else {
+    showScreen('start-screen');
   }
-  customThreads = loadJson('lumi_custom_threads') || {};
+}
+
+function startApp() {
+  const name = document.getElementById('start-name').value.trim();
+  const apiKey = document.getElementById('start-api-key').value.trim();
+  if (!name) { showError('start-error', 'Please enter your name'); return; }
+  if (!apiKey) { showError('start-error', 'API key is required'); return; }
+
+  familyData = {
+    apiKey,
+    yourName: name,
+    assistantName: 'Toodles',
+    kids: '', partnerPhone: '', extraContext: '', location: '',
+    model: 'claude-sonnet-4-6',
+    connections: { gmail: true, calendar: true, tasks: true, weather: true, search: true },
+  };
+  localStorage.setItem('toodles_family', JSON.stringify(familyData));
+  initFirebase();
   showApp();
+  if (!localStorage.getItem('toodles_welcome_seen')) {
+    document.getElementById('welcome-overlay').classList.remove('hidden');
+  }
 }
 
-function loadLocalState() {
-  familyData = loadJson('lumi_family') || {};
-  threads = loadJson('lumi_threads_local') || {};
-  customThreads = loadJson('lumi_custom_threads') || {};
-  if (familyData.apiKey) showApp();
-  else showScreen('family-screen');
-}
-
-function enterLocalMode(e) {
-  e.preventDefault();
-  localMode = true;
-  showScreen('family-screen');
+function resetApp() {
+  if (!confirm('This will sign you out and clear all local data. Continue?')) return;
+  if (unsubFamily) unsubFamily();
+  Object.values(unsubThreads).forEach(u => u());
+  if (fbAuth) fbAuth.signOut().catch(() => {});
+  currentUser = null; familyId = null; familyData = {}; threads = {}; customThreads = {};
+  gmailToken = null; calendarToken = null; tasksToken = null; googleConnected = false;
+  localStorage.removeItem('toodles_family');
+  localStorage.removeItem('toodles_threads');
+  localStorage.removeItem('toodles_custom_threads');
+  localStorage.removeItem('toodles_welcome_seen');
+  document.getElementById('settings-overlay').classList.add('hidden');
+  showScreen('start-screen');
 }
 
 // ════════════════════════════
-// FIREBASE
+// FIREBASE (optional — for Google auth + family sync)
 // ════════════════════════════
 function initFirebase() {
   try {
     if (firebase.apps.length) fbApp = firebase.apps[0];
-    else fbApp = firebase.initializeApp(fbConfig);
+    else fbApp = firebase.initializeApp(FB_CONFIG);
     fbAuth = firebase.auth();
     fbDb = firebase.firestore();
     fbAuth.getRedirectResult().then(result => {
       if (result && result.credential) {
         gmailToken = result.credential.accessToken;
         calendarToken = result.credential.accessToken;
+        tasksToken = result.credential.accessToken;
+        googleConnected = true;
+        renderSourcePills();
+        updateConnectionsUI();
+        showToast('Google connected!');
       }
     }).catch(e => console.warn('Redirect result error:', e));
-    fbAuth.onAuthStateChanged(onAuthChange);
+    fbAuth.onAuthStateChanged(user => {
+      currentUser = user;
+      if (user) {
+        googleConnected = true;
+        findFamily();
+        renderSourcePills();
+      }
+    });
   } catch (e) {
-    console.error('Firebase init error:', e);
-    showScreen('signin-screen');
+    console.warn('Firebase init (non-critical):', e);
   }
 }
 
-function saveFbConfig() {
-  const raw = document.getElementById('fb-config-input').value.trim();
-  try {
-    let parsed;
-    if (raw.startsWith('{')) parsed = JSON.parse(raw);
-    else {
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-      else throw new Error('Could not find JSON object');
-    }
-    if (!parsed.apiKey || !parsed.projectId) throw new Error('Missing apiKey or projectId');
-    fbConfig = parsed;
-    localStorage.setItem('lumi_fb_config', JSON.stringify(fbConfig));
-    initFirebase();
-    showScreen('signin-screen');
-  } catch (e) {
-    showError('fb-setup-error', 'Invalid config: ' + e.message);
-  }
-}
-
-function onAuthChange(user) {
-  currentUser = user;
-  if (!user) { showScreen('signin-screen'); return; }
-  document.getElementById('user-avatar').src = user.photoURL || '';
-  findFamily();
-}
-
-async function googleSignIn() {
+async function connectGoogle() {
+  if (!fbAuth) { showToast('Firebase not loaded'); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
   provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
+  provider.addScope('https://www.googleapis.com/auth/tasks.readonly');
   try {
     const result = await fbAuth.signInWithPopup(provider);
     if (result.credential) {
       gmailToken = result.credential.accessToken;
       calendarToken = result.credential.accessToken;
+      tasksToken = result.credential.accessToken;
     }
+    googleConnected = true;
+    renderSourcePills();
+    updateConnectionsUI();
+    showToast('Google connected!');
   } catch (popupErr) {
     if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
-      try {
-        await fbAuth.signInWithRedirect(provider);
-      } catch (redirectErr) {
-        showError('signin-error', redirectErr.message);
-      }
+      try { await fbAuth.signInWithRedirect(provider); } catch (e) { showToast('Sign-in failed: ' + e.message); }
     } else {
-      showError('signin-error', popupErr.message);
+      showToast('Sign-in failed: ' + popupErr.message);
     }
   }
 }
 
-async function signOutUser() {
-  if (unsubFamily) unsubFamily();
+function disconnectGoogle() {
+  if (fbAuth) fbAuth.signOut().catch(() => {});
+  currentUser = null; googleConnected = false;
+  gmailToken = null; calendarToken = null; tasksToken = null;
+  if (unsubFamily) { unsubFamily(); unsubFamily = null; }
   Object.values(unsubThreads).forEach(u => u());
-  currentUser = null; familyId = null; familyData = null; threads = {}; customThreads = {};
-  if (localMode) {
-    localMode = false;
-    localStorage.removeItem('lumi_family');
-    localStorage.removeItem('lumi_threads_local');
-    localStorage.removeItem('lumi_custom_threads');
-  }
-  document.getElementById('settings-overlay').classList.add('hidden');
-  if (fbAuth) await fbAuth.signOut();
-  showScreen('signin-screen');
+  unsubThreads = {};
+  familyId = null;
+  renderSourcePills();
+  updateConnectionsUI();
+  showToast('Google disconnected');
+}
+
+async function getOAuthToken() {
+  if (gmailToken) return gmailToken;
+  if (!googleConnected || !fbAuth) return null;
+  try {
+    showToast('Reconnecting to Google...');
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+    provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
+    provider.addScope('https://www.googleapis.com/auth/tasks.readonly');
+    try {
+      const result = await fbAuth.signInWithPopup(provider);
+      gmailToken = result.credential?.accessToken;
+      calendarToken = gmailToken;
+      tasksToken = gmailToken;
+      return gmailToken;
+    } catch (popupErr) {
+      await fbAuth.signInWithRedirect(provider);
+      return null;
+    }
+  } catch (e) { showToast('Google auth failed'); return null; }
 }
 
 // ════════════════════════════
-// FAMILY
+// FAMILY (Firestore sync — optional)
 // ════════════════════════════
 async function findFamily() {
+  if (!fbDb || !currentUser) return;
   try {
     const snap = await fbDb.collection('families').where('memberIds', 'array-contains', currentUser.uid).limit(1).get();
     if (!snap.empty) {
       familyId = snap.docs[0].id;
       const d = snap.docs[0].data();
-      familyData = d.config || {};
-      customThreads = d.customThreads || {};
+      if (d.config) {
+        familyData = { ...familyData, ...d.config };
+        localStorage.setItem('toodles_family', JSON.stringify(familyData));
+      }
+      if (d.customThreads) customThreads = d.customThreads;
       listenToFamily();
-      showApp();
+      updateIdentity();
+      renderThreadTabs();
       return;
     }
     const inviteSnap = await fbDb.collection('families').where('invitedEmail', '==', currentUser.email).limit(1).get();
     if (!inviteSnap.empty) {
       familyId = inviteSnap.docs[0].id;
       const d = inviteSnap.docs[0].data();
-      familyData = d.config || {};
-      customThreads = d.customThreads || {};
-      document.getElementById('family-create').style.display = 'none';
-      document.getElementById('family-join').style.display = 'block';
-      document.getElementById('family-join-info').innerHTML = `<p style="font-size:15px;margin-bottom:8px">Family created by <b>${d.members?.[Object.keys(d.members)[0]]?.name || 'your partner'}</b></p>`;
-      showFamilyBadge();
-      showScreen('family-screen');
-      return;
+      if (d.config) {
+        familyData = { ...familyData, ...d.config };
+        localStorage.setItem('toodles_family', JSON.stringify(familyData));
+      }
+      if (d.customThreads) customThreads = d.customThreads;
+      await fbDb.collection('families').doc(familyId).update({
+        memberIds: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
+        [`members.${currentUser.uid}`]: { name: currentUser.displayName, email: currentUser.email, photo: currentUser.photoURL },
+      });
+      listenToFamily();
+      updateIdentity();
+      renderThreadTabs();
     }
   } catch (e) {
-    console.error('Firestore query error:', e);
-  }
-  document.getElementById('family-create').style.display = 'block';
-  document.getElementById('family-join').style.display = 'none';
-  showFamilyBadge();
-  showScreen('family-screen');
-}
-
-function showFamilyBadge() {
-  if (!currentUser) return;
-  const badge = document.getElementById('family-user-badge');
-  badge.style.display = 'flex';
-  badge.innerHTML = `<img src="${currentUser.photoURL||''}" alt=""><div><div class="ub-name">${currentUser.displayName||''}</div><div class="ub-email">${currentUser.email}</div></div>`;
-}
-
-async function createFamily() {
-  const apiKey = document.getElementById('f-api-key').value.trim();
-  if (!apiKey) { showError('family-error', 'API key is required'); return; }
-  const config = {
-    apiKey,
-    kids: document.getElementById('f-kids').value.trim(),
-    partnerPhone: document.getElementById('f-partner-phone').value.trim(),
-    assistantName: document.getElementById('f-assistant-name').value.trim() || 'Lumi',
-    webSearch: true, model: 'claude-sonnet-4-6', extraContext: '',
-    location: '', calendarEnabled: true, weatherEnabled: true,
-  };
-  const partnerEmail = document.getElementById('f-partner-email').value.trim();
-  const familyDoc = {
-    config,
-    customThreads: {},
-    memberIds: [currentUser.uid],
-    members: { [currentUser.uid]: { name: currentUser.displayName, email: currentUser.email, photo: currentUser.photoURL } },
-    invitedEmail: partnerEmail || '',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-  };
-
-  if (localMode) {
-    familyData = { ...config, yourName: currentUser?.displayName || '' };
-    localStorage.setItem('lumi_family', JSON.stringify(familyData));
-    showApp();
-    return;
-  }
-
-  try {
-    const ref = await fbDb.collection('families').add(familyDoc);
-    familyId = ref.id;
-    familyData = config;
-    listenToFamily();
-    showApp();
-  } catch (e) {
-    showError('family-error', e.message);
-  }
-}
-
-async function joinFamily() {
-  try {
-    await fbDb.collection('families').doc(familyId).update({
-      memberIds: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
-      [`members.${currentUser.uid}`]: { name: currentUser.displayName, email: currentUser.email, photo: currentUser.photoURL },
-    });
-    listenToFamily();
-    showApp();
-  } catch (e) {
-    showError('family-error', e.message);
+    console.warn('Family lookup (non-critical):', e);
   }
 }
 
@@ -681,7 +674,10 @@ function listenToFamily() {
   unsubFamily = fbDb.collection('families').doc(familyId).onSnapshot(snap => {
     if (!snap.exists) return;
     const d = snap.data();
-    familyData = d.config || familyData;
+    if (d.config) {
+      familyData = { ...familyData, ...d.config };
+      localStorage.setItem('toodles_family', JSON.stringify(familyData));
+    }
     customThreads = d.customThreads || customThreads;
     updateIdentity();
     renderThreadTabs();
@@ -692,7 +688,7 @@ function listenToFamily() {
 // THREAD PERSISTENCE
 // ════════════════════════════
 function loadThread(threadId) {
-  if (localMode || !familyId) return;
+  if (!familyId || !fbDb) return;
   if (unsubThreads[threadId]) return;
   unsubThreads[threadId] = fbDb.collection('families').doc(familyId)
     .collection('threads').doc(threadId).onSnapshot(snap => {
@@ -705,10 +701,8 @@ function loadThread(threadId) {
 
 function saveThread(threadId) {
   const thread = getThread(threadId);
-  if (localMode || !familyId) {
-    localStorage.setItem('lumi_threads_local', JSON.stringify(threads));
-    return;
-  }
+  localStorage.setItem('toodles_threads', JSON.stringify(threads));
+  if (!familyId || !fbDb) return;
   const cleanMessages = thread.apiMessages.slice(-50).map(msg => {
     if (Array.isArray(msg.content)) {
       return { ...msg, content: msg.content.filter(b => b.type !== 'image') };
@@ -757,11 +751,10 @@ function createCustomThread() {
   const id = 'custom_' + Date.now();
   customThreads[id] = { icon, label: name, hint: hint || `Focus on: ${name}`, tabClass: 't-custom' };
 
-  if (!localMode && familyId && fbDb) {
+  if (familyId && fbDb) {
     fbDb.collection('families').doc(familyId).update({ customThreads }).catch(e => console.error(e));
-  } else {
-    localStorage.setItem('lumi_custom_threads', JSON.stringify(customThreads));
   }
+  localStorage.setItem('toodles_custom_threads', JSON.stringify(customThreads));
 
   closeNewThreadModal();
   renderThreadTabs();
@@ -773,41 +766,82 @@ function deleteCustomThread(id) {
   if (!confirm(`Delete "${(customThreads[id]||{}).label}" thread and its conversations?`)) return;
   delete customThreads[id];
   delete threads[id];
-  if (!localMode && familyId && fbDb) {
+  if (familyId && fbDb) {
     fbDb.collection('families').doc(familyId).update({ customThreads }).catch(e => console.error(e));
     fbDb.collection('families').doc(familyId).collection('threads').doc(id).delete().catch(e => console.error(e));
-  } else {
-    localStorage.setItem('lumi_custom_threads', JSON.stringify(customThreads));
-    localStorage.setItem('lumi_threads_local', JSON.stringify(threads));
   }
+  localStorage.setItem('toodles_custom_threads', JSON.stringify(customThreads));
+  localStorage.setItem('toodles_threads', JSON.stringify(threads));
   if (activeThread === id) switchThread('chat');
   renderThreadTabs();
   showToast('Thread deleted');
 }
 
 // ════════════════════════════
-// GMAIL
+// CONNECTIONS UI
 // ════════════════════════════
-async function getOAuthToken() {
-  if (gmailToken) return gmailToken;
-  try {
-    showToast('Reconnecting to Google...');
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-    provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
-    try {
-      const result = await fbAuth.signInWithPopup(provider);
-      gmailToken = result.credential?.accessToken;
-      calendarToken = gmailToken;
-      return gmailToken;
-    } catch (popupErr) {
-      await fbAuth.signInWithRedirect(provider);
-      return null;
-    }
-  } catch (e) { showToast('Google auth failed'); return null; }
+function getConns() {
+  return familyData.connections || { gmail: true, calendar: true, tasks: true, weather: true, search: true };
 }
 
+function openConnections() {
+  updateConnectionsUI();
+  document.getElementById('connections-overlay').classList.remove('hidden');
+}
+
+function updateConnectionsUI() {
+  const conns = getConns();
+  const statusEl = document.getElementById('conn-google-status');
+  const btnEl = document.getElementById('conn-google-btn');
+  const servicesEl = document.getElementById('google-services-section');
+
+  if (googleConnected && currentUser) {
+    statusEl.textContent = currentUser.email || 'Connected';
+    statusEl.className = 'conn-status conn-on';
+    btnEl.textContent = 'Disconnect';
+    btnEl.className = 'conn-btn conn-btn-disconnect';
+    btnEl.onclick = disconnectGoogle;
+    servicesEl.style.display = 'block';
+  } else {
+    statusEl.textContent = 'Not connected';
+    statusEl.className = 'conn-status conn-off';
+    btnEl.textContent = 'Connect Google';
+    btnEl.className = 'conn-btn';
+    btnEl.onclick = connectGoogle;
+    servicesEl.style.display = 'none';
+  }
+
+  const toggleMap = {
+    'conn-gmail-toggle': conns.gmail !== false,
+    'conn-calendar-toggle': conns.calendar !== false,
+    'conn-tasks-toggle': conns.tasks !== false,
+    'conn-weather-toggle': conns.weather !== false,
+    'conn-search-toggle': conns.search !== false,
+  };
+  for (const [id, on] of Object.entries(toggleMap)) {
+    const el = document.getElementById(id);
+    if (el) on ? el.classList.add('on') : el.classList.remove('on');
+  }
+}
+
+function toggleConnection(type) {
+  const conns = getConns();
+  conns[type] = !conns[type];
+  familyData.connections = conns;
+  localStorage.setItem('toodles_family', JSON.stringify(familyData));
+  if (familyId && fbDb) {
+    fbDb.collection('families').doc(familyId).update({ 'config.connections': conns }).catch(() => {});
+  }
+  updateConnectionsUI();
+  renderSourcePills();
+}
+
+// ════════════════════════════
+// GMAIL
+// ════════════════════════════
 async function fetchEmails(retried) {
+  const conns = getConns();
+  if (conns.gmail === false || !googleConnected) return null;
   const token = await getOAuthToken();
   if (!token) return null;
   try {
@@ -840,6 +874,8 @@ async function fetchEmails(retried) {
 // GOOGLE CALENDAR
 // ════════════════════════════
 async function fetchCalendarEvents(retried) {
+  const conns = getConns();
+  if (conns.calendar === false || !googleConnected) return null;
   const token = await getOAuthToken();
   if (!token) return null;
   try {
@@ -862,6 +898,49 @@ async function fetchCalendarEvents(retried) {
     return 'Here are my upcoming calendar events (next 7 days):\n\n' + events.join('\n\n');
   } catch (e) {
     console.error('Calendar fetch error:', e);
+    return null;
+  }
+}
+
+// ════════════════════════════
+// GOOGLE TASKS
+// ════════════════════════════
+async function fetchTasks(retried) {
+  const conns = getConns();
+  if (conns.tasks === false || !googleConnected) return null;
+  const token = await getOAuthToken();
+  if (!token) return null;
+  try {
+    const listResp = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (listResp.status === 401 && !retried) { gmailToken = null; tasksToken = null; return fetchTasks(true); }
+    if (!listResp.ok) throw new Error('Tasks API error ' + listResp.status);
+    const listData = await listResp.json();
+    if (!listData.items?.length) return 'No task lists found.';
+
+    let allTasks = [];
+    for (const taskList of listData.items.slice(0, 5)) {
+      const tasksResp = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskList.id}/tasks?maxResults=20&showCompleted=false`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!tasksResp.ok) continue;
+      const tasksData = await tasksResp.json();
+      if (!tasksData.items?.length) continue;
+      const taskItems = tasksData.items.filter(t => t.title).map(t => {
+        let line = `  - ${t.title}`;
+        if (t.due) line += ` (due: ${new Date(t.due).toLocaleDateString('en-US', { month:'short', day:'numeric' })})`;
+        if (t.notes) line += `\n    Notes: ${t.notes.substring(0, 80)}`;
+        return line;
+      });
+      if (taskItems.length) {
+        allTasks.push(`📋 ${taskList.title}:\n${taskItems.join('\n')}`);
+      }
+    }
+    if (!allTasks.length) return 'No pending tasks found.';
+    return 'Here are your Google Tasks:\n\n' + allTasks.join('\n\n');
+  } catch (e) {
+    console.error('Tasks fetch error:', e);
     return null;
   }
 }
@@ -937,18 +1016,14 @@ function showApp() {
   try { renderThreadTabs(); } catch(e) { console.error('renderThreadTabs error:', e); }
   try { renderSourcePills(); } catch(e) { console.error('renderSourcePills error:', e); }
   switchThread(activeThread);
-  // Ensure thread tabs rendered (retry after a tick for mobile Safari)
   setTimeout(() => {
     const tabs = document.getElementById('thread-tabs');
     if (tabs && !tabs.children.length) renderThreadTabs();
   }, 100);
-  if (!localStorage.getItem('lumi_welcome_seen')) {
-    document.getElementById('welcome-overlay').classList.remove('hidden');
-  }
 }
 
 function updateIdentity() {
-  const name = familyData?.assistantName || 'Lumi';
+  const name = familyData?.assistantName || 'Toodles';
   document.getElementById('header-name').textContent = name;
   document.getElementById('msg-input').placeholder = `Message ${name}…`;
 }
@@ -967,16 +1042,18 @@ function renderThreadTabs() {
 }
 
 function renderSourcePills() {
+  const conns = getConns();
   const pills = document.getElementById('source-pills');
   const sources = [
-    { label:'Gmail', active: !!gmailToken },
-    { label:'Calendar', active: !!calendarToken && familyData?.calendarEnabled !== false },
-    { label:'Weather', active: familyData?.weatherEnabled !== false && !!familyData?.location },
-    { label:'Web Search', active: familyData?.webSearch !== false },
+    { label:'Gmail', active: conns.gmail !== false && googleConnected },
+    { label:'Calendar', active: conns.calendar !== false && googleConnected },
+    { label:'Tasks', active: conns.tasks !== false && googleConnected },
+    { label:'Weather', active: conns.weather !== false && !!familyData?.location },
+    { label:'Web Search', active: conns.search !== false },
     { label:'Photos', active: true },
   ];
   pills.innerHTML = sources.map(s =>
-    `<div class="source-pill ${s.active ? 'sp-active' : 'sp-inactive'}"><span class="sp-dot"></span>${s.label}</div>`
+    `<button class="source-pill ${s.active ? 'sp-active' : 'sp-inactive'}" onclick="openConnections()"><span class="sp-dot"></span>${s.label}</button>`
   ).join('');
 }
 
@@ -993,7 +1070,7 @@ function toggleWelcomeOverlay() {
 
 function dismissWelcome() {
   document.getElementById('welcome-overlay').classList.add('hidden');
-  localStorage.setItem('lumi_welcome_seen', '1');
+  localStorage.setItem('toodles_welcome_seen', '1');
 }
 
 function switchThread(threadId) {
@@ -1024,7 +1101,7 @@ function renderWelcome(threadId) {
   const allMeta = { ...THREAD_META, ...customThreads };
   const meta = allMeta[threadId] || {};
   const sugg = THREAD_SUGGESTIONS[threadId] || (customThreads[threadId] ? ['Help me plan','What should I think about?','Make a checklist'] : []);
-  const name = familyData?.assistantName || 'Lumi';
+  const name = familyData?.assistantName || 'Toodles';
   const welcomeTexts = {
     chat: 'Catching deadlines, building lists, and making sure nothing slips through the cracks.',
     inbox: `Tap a suggestion or type to have ${name} read and summarize your recent emails.`,
@@ -1032,14 +1109,14 @@ function renderWelcome(threadId) {
     briefing: 'Get up to speed on what\'s happening today and this week — including weather and prep.',
     school: 'Stay on top of school deadlines, permission slips, and events.',
     todos: 'Organize what needs to happen and who should handle what.',
-    remind: 'Make sure nothing important slips through the cracks.',
+    remind: `Track reminders and tasks.${googleConnected ? ' I can pull your Google Tasks too.' : ' Connect Google in 🔗 to pull your task list.'}`,
     share: `Draft messages to share with ${familyData?.partnerName || 'your partner'} — send them right via text.`,
   };
   const bodyText = welcomeTexts[threadId] || meta.hint || 'Start a conversation about ' + (meta.label || 'this topic') + '.';
   const deleteBtn = threadId.startsWith('custom_') ? `<button style="margin-top:16px;background:none;border:none;color:var(--text-light);font-size:12px;cursor:pointer;text-decoration:underline" onclick="deleteCustomThread('${threadId}')">Delete this thread</button>` : '';
   document.getElementById('chat-area').innerHTML = `
     <div class="welcome-state">
-      <div class="welcome-emoji">${meta.icon || '🌿'}</div>
+      <div class="welcome-emoji">${meta.icon || '🐾'}</div>
       <div class="welcome-title">${threadId === 'chat' ? `Hi, I'm ${name}!` : meta.label}</div>
       <div class="welcome-body">${bodyText}</div>
       <div class="suggestion-grid">${sugg.map(s => `<button class="suggestion-chip" onclick="sendText(this.textContent)">${s}</button>`).join('')}</div>
@@ -1064,7 +1141,6 @@ async function sendMessage() {
   if (ws) ws.remove();
   inputEl.value = ''; inputEl.style.height = 'auto';
 
-  // Capture image before clearing
   let imageBlock = null;
   let imageForDisplay = null;
   if (hasImage) {
@@ -1073,7 +1149,6 @@ async function sendMessage() {
     clearPendingImage();
   }
 
-  // Save what the user actually typed for display
   const userTypedText = text;
 
   // For inbox thread, fetch emails on first message
@@ -1090,13 +1165,18 @@ async function sendMessage() {
     if (calText) text = calText + '\n\n---\n\nMy request: ' + (text || 'What\'s on my calendar?');
   }
 
+  // For remind thread, fetch tasks on first message
+  if (activeThread === 'remind' && getThread('remind').apiMessages.length === 0) {
+    showToast('Fetching your tasks...');
+    const tasksText = await fetchTasks();
+    if (tasksText) text = tasksText + '\n\n---\n\nMy request: ' + (text || 'What are my reminders and tasks?');
+  }
+
   const thread = getThread(activeThread);
 
-  // Display the user message (show what they typed, not the prepended data)
   if (imageForDisplay) appendImageBubble(imageForDisplay, true);
   if (userTypedText) appendBubbles('user', [userTypedText], true);
 
-  // Build API content
   let userContent;
   if (imageBlock) {
     userContent = [imageBlock];
@@ -1113,13 +1193,14 @@ async function sendMessage() {
 
   try {
     const systemPrompt = await buildSystemPrompt(activeThread);
+    const conns = getConns();
     const reqBody = {
       model: familyData.model || 'claude-sonnet-4-6',
       max_tokens: 2048,
       system: systemPrompt,
       messages: thread.apiMessages,
     };
-    if (familyData.webSearch !== false) {
+    if (conns.search !== false) {
       reqBody.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
     }
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1168,10 +1249,10 @@ function appendBubbles(role, texts, scroll, isError) {
   group.className = `msg-group ${role}`; group.dataset.role = role;
   if (role === 'ai') {
     const s = document.createElement('div'); s.className = 'msg-sender-name';
-    s.textContent = familyData?.assistantName || 'Lumi'; group.appendChild(s);
-  } else if (role === 'user' && currentUser) {
+    s.textContent = familyData?.assistantName || 'Toodles'; group.appendChild(s);
+  } else if (role === 'user') {
     const s = document.createElement('div'); s.className = 'msg-sender-name';
-    s.textContent = currentUser.displayName?.split(' ')[0] || 'You'; group.appendChild(s);
+    s.textContent = (currentUser?.displayName || familyData?.yourName || 'You').split(' ')[0]; group.appendChild(s);
   }
   texts.forEach(t => { const el = document.createElement('div'); el.className = 'msg-bubble' + (isError ? ' error-bubble' : ''); el.textContent = t; group.appendChild(el); });
   chatArea.appendChild(group);
@@ -1182,10 +1263,8 @@ function appendImageBubble(dataUrl, persist) {
   const chatArea = document.getElementById('chat-area');
   const group = document.createElement('div');
   group.className = 'msg-group user';
-  if (currentUser) {
-    const s = document.createElement('div'); s.className = 'msg-sender-name';
-    s.textContent = currentUser.displayName?.split(' ')[0] || 'You'; group.appendChild(s);
-  }
+  const s = document.createElement('div'); s.className = 'msg-sender-name';
+  s.textContent = (currentUser?.displayName || familyData?.yourName || 'You').split(' ')[0]; group.appendChild(s);
   const img = document.createElement('img');
   img.src = dataUrl; img.className = 'msg-image'; img.alt = 'Uploaded photo';
   group.appendChild(img);
@@ -1212,9 +1291,10 @@ function appendSmsButton(text, persist) {
 
 function showTyping() {
   const g = document.createElement('div'); g.className = 'typing-group';
-  const n = document.createElement('div'); n.className = 'msg-sender-name'; n.textContent = familyData?.assistantName || 'Lumi'; g.appendChild(n);
+  const n = document.createElement('div'); n.className = 'msg-sender-name'; n.textContent = familyData?.assistantName || 'Toodles'; g.appendChild(n);
   const d = document.createElement('div'); d.className = 'typing-dots'; d.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>'; g.appendChild(d);
-  if (familyData?.webSearch !== false) { const h = document.createElement('div'); h.className = 'searching-label'; h.textContent = 'may search the web...'; g.appendChild(h); }
+  const conns = getConns();
+  if (conns.search !== false) { const h = document.createElement('div'); h.className = 'searching-label'; h.textContent = 'may search the web...'; g.appendChild(h); }
   document.getElementById('chat-area').appendChild(g); scrollBottom(); return g;
 }
 
@@ -1225,20 +1305,14 @@ function scrollBottom() { const c = document.getElementById('chat-area'); c.scro
 // ════════════════════════════
 function openSettings() {
   document.getElementById('ss-api-key').value = familyData?.apiKey || '';
+  document.getElementById('ss-your-name').value = familyData?.yourName || '';
   document.getElementById('ss-kids').value = familyData?.kids || '';
   document.getElementById('ss-partner-phone').value = familyData?.partnerPhone || '';
   document.getElementById('ss-assistant-name').value = familyData?.assistantName || '';
   document.getElementById('ss-location').value = familyData?.location || '';
   document.getElementById('ss-context').value = familyData?.extraContext || '';
   document.getElementById('ss-model').value = familyData?.model || 'claude-sonnet-4-6';
-  const ws = document.getElementById('ss-web-search');
-  familyData?.webSearch !== false ? ws.classList.add('on') : ws.classList.remove('on');
-  const cal = document.getElementById('ss-calendar');
-  familyData?.calendarEnabled !== false ? cal.classList.add('on') : cal.classList.remove('on');
-  const wea = document.getElementById('ss-weather');
-  familyData?.weatherEnabled !== false ? wea.classList.add('on') : wea.classList.remove('on');
 
-  // Show custom threads for deletion
   const customSection = document.getElementById('ss-custom-threads-section');
   const customList = document.getElementById('ss-custom-threads-list');
   const customKeys = Object.keys(customThreads);
@@ -1262,20 +1336,17 @@ function saveSettings() {
   familyData = {
     ...familyData,
     apiKey: document.getElementById('ss-api-key').value.trim() || familyData?.apiKey,
+    yourName: document.getElementById('ss-your-name').value.trim(),
     kids: document.getElementById('ss-kids').value.trim(),
     partnerPhone: document.getElementById('ss-partner-phone').value.trim(),
-    assistantName: document.getElementById('ss-assistant-name').value.trim() || 'Lumi',
+    assistantName: document.getElementById('ss-assistant-name').value.trim() || 'Toodles',
     location: document.getElementById('ss-location').value.trim(),
     extraContext: document.getElementById('ss-context').value.trim(),
     model: document.getElementById('ss-model').value,
-    webSearch: document.getElementById('ss-web-search').classList.contains('on'),
-    calendarEnabled: document.getElementById('ss-calendar').classList.contains('on'),
-    weatherEnabled: document.getElementById('ss-weather').classList.contains('on'),
   };
-  if (!localMode && familyId) {
+  localStorage.setItem('toodles_family', JSON.stringify(familyData));
+  if (familyId && fbDb) {
     fbDb.collection('families').doc(familyId).update({ config: familyData }).catch(e => showToast('Save error: ' + e.message));
-  } else {
-    localStorage.setItem('lumi_family', JSON.stringify(familyData));
   }
   document.getElementById('settings-overlay').classList.add('hidden');
   updateIdentity();
@@ -1292,42 +1363,53 @@ function clearThread() {
   showToast('Thread cleared');
 }
 
-function showUserMenu() { openSettings(); }
-
 // ════════════════════════════
 // SYSTEM PROMPT
 // ════════════════════════════
 async function buildSystemPrompt(threadId) {
-  const name = familyData?.assistantName || 'Lumi';
-  const you = currentUser?.displayName || familyData?.yourName || 'you';
+  const name = familyData?.assistantName || 'Toodles';
+  const you = familyData?.yourName || 'you';
   const kids = familyData?.kids || 'children (not specified)';
   const extra = familyData?.extraContext || '';
   const location = familyData?.location || '';
   const today = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   const allMeta = { ...THREAD_META, ...customThreads };
   const meta = allMeta[threadId] || {};
+  const conns = getConns();
 
   let contextBlocks = '';
 
-  // For briefing thread, auto-fetch calendar and include weather location
   if (threadId === 'briefing') {
-    if (familyData?.calendarEnabled !== false && !localMode) {
+    if (conns.calendar !== false && googleConnected) {
       try {
         const calText = await fetchCalendarEvents();
         if (calText) contextBlocks += '\n\nCALENDAR DATA:\n' + calText;
       } catch(e) {}
     }
-    if (familyData?.weatherEnabled !== false && location) {
+    if (conns.tasks !== false && googleConnected) {
+      try {
+        const tasksText = await fetchTasks();
+        if (tasksText) contextBlocks += '\n\nGOOGLE TASKS:\n' + tasksText;
+      } catch(e) {}
+    }
+    if (conns.weather !== false && location) {
       contextBlocks += `\n\nWEATHER: Use your web search to look up today's weather for ${location}. Include practical advice like whether kids need raincoats, sunscreen, layers, etc.`;
     }
   }
 
-  // For remind thread, include calendar context
-  if (threadId === 'remind' && familyData?.calendarEnabled !== false && !localMode) {
-    try {
-      const calText = await fetchCalendarEvents();
-      if (calText) contextBlocks += '\n\nUPCOMING CALENDAR EVENTS:\n' + calText;
-    } catch(e) {}
+  if (threadId === 'remind') {
+    if (conns.calendar !== false && googleConnected) {
+      try {
+        const calText = await fetchCalendarEvents();
+        if (calText) contextBlocks += '\n\nUPCOMING CALENDAR EVENTS:\n' + calText;
+      } catch(e) {}
+    }
+    if (conns.tasks !== false && googleConnected) {
+      try {
+        const tasksText = await fetchTasks();
+        if (tasksText) contextBlocks += '\n\nGOOGLE TASKS:\n' + tasksText;
+      } catch(e) {}
+    }
   }
 
   return `You are ${name}, a warm family planning assistant for ${you}.
@@ -1349,6 +1431,7 @@ Rules:
 - You have web search — use it for current info (weather, school schedules, events, etc.)
 - When summarizing emails, highlight action items, deadlines, and things that need responses
 - When reviewing a calendar, flag conflicts, things to prepare, and reminders
+- When reviewing tasks/reminders, organize by priority and highlight overdue items
 - When a user sends a photo of a calendar or schedule, carefully extract ALL dates, events, and details
 - If location is known and this is a briefing or planning context, consider weather in your advice (e.g., pack raincoats, sunscreen)`;
 }
