@@ -188,6 +188,15 @@
     .cal-item .cal-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
     .cal-item .cal-name{flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .cal-item .cal-type{font-size:10px;color:var(--text-light);flex-shrink:0}
+    .acct-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;margin-bottom:6px}
+    .acct-card img{width:32px;height:32px;border-radius:50%;flex-shrink:0}
+    .acct-card .acct-placeholder{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#4285F4,#34A853);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px}
+    .acct-info{flex:1;min-width:0}
+    .acct-info .acct-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .acct-info .acct-email{font-size:11px;color:var(--text-light);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .acct-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;background:var(--tag-blue-bg);color:var(--tag-blue);flex-shrink:0}
+    .acct-remove{background:none;border:none;color:var(--text-light);font-size:16px;cursor:pointer;padding:4px;flex-shrink:0;line-height:1}
+    .acct-remove:hover{color:#B91C1C}
 
     /* Welcome overlay */
     .welcome-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
@@ -328,20 +337,15 @@
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title">Connections</div>
-    <p style="font-size:13px;color:var(--text-mid);margin-bottom:18px;line-height:1.5">Connect your Google account to unlock email, calendar, and reminders. You can toggle each one on or off.</p>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:18px;line-height:1.5">Connect your Google accounts to unlock email, calendar, and reminders. You can add multiple accounts (home + work).</p>
 
     <div id="google-account-section">
-      <div class="conn-card" id="conn-google">
-        <div class="conn-header">
-          <div class="conn-title"><span class="conn-icon">🔑</span> Google Account</div>
-          <span class="conn-status conn-off" id="conn-google-status">Not connected</span>
-        </div>
-        <div class="conn-desc">Sign in with Google to enable Gmail, Calendar, and Reminders.</div>
-        <button class="conn-btn" id="conn-google-btn" onclick="connectGoogle()">Connect Google</button>
-      </div>
+      <div class="sec-label" style="margin-top:0">Google Accounts</div>
+      <div id="google-accounts-list"></div>
+      <button class="conn-btn" id="conn-add-google" onclick="connectGoogle()" style="margin-top:8px;width:100%;text-align:center;padding:10px">+ Add Google Account</button>
     </div>
 
-    <div id="google-services-section" style="display:none">
+    <div id="google-services-section" style="display:none;margin-top:14px">
       <div class="conn-card">
         <div class="conn-header">
           <div class="conn-title"><span class="conn-icon">📧</span> Gmail</div>
@@ -487,19 +491,46 @@ let threads = {};
 let customThreads = {};
 let activeThread = 'chat';
 let isLoading = false;
-let gmailToken = null;
-let calendarToken = null;
-let tasksToken = null;
 let pendingImage = null;
 let unsubFamily = null, unsubThreads = {};
-let googleConnected = false;
 
+// Multi-account support: array of { email, name, photo, token, isPrimary }
+let googleAccounts = [];
+
+function getTokens() {
+  return googleAccounts.filter(a => a.token).map(a => a.token);
+}
+function getPrimaryToken() {
+  const primary = googleAccounts.find(a => a.isPrimary && a.token);
+  return primary ? primary.token : (googleAccounts.length ? googleAccounts[0].token : null);
+}
+function isGoogleConnected() {
+  return googleAccounts.length > 0;
+}
 function saveTokens() {
-  if (gmailToken) sessionStorage.setItem('toodles_oauth', gmailToken);
+  const data = googleAccounts.map(a => ({ email: a.email, name: a.name, photo: a.photo, token: a.token, isPrimary: a.isPrimary }));
+  sessionStorage.setItem('toodles_accounts', JSON.stringify(data));
 }
 function restoreTokens() {
-  const t = sessionStorage.getItem('toodles_oauth');
-  if (t) { gmailToken = t; calendarToken = t; tasksToken = t; }
+  try {
+    const data = JSON.parse(sessionStorage.getItem('toodles_accounts'));
+    if (data?.length) googleAccounts = data;
+  } catch(e) {}
+}
+function addAccount(email, name, photo, token, isPrimary) {
+  const existing = googleAccounts.findIndex(a => a.email === email);
+  if (existing >= 0) {
+    googleAccounts[existing].token = token;
+    googleAccounts[existing].name = name || googleAccounts[existing].name;
+    googleAccounts[existing].photo = photo || googleAccounts[existing].photo;
+  } else {
+    googleAccounts.push({ email, name, photo, token, isPrimary: isPrimary || false });
+  }
+  saveTokens();
+}
+function removeAccount(email) {
+  googleAccounts = googleAccounts.filter(a => a.email !== email);
+  saveTokens();
 }
 
 // Connection toggles stored in familyData
@@ -554,7 +585,8 @@ function resetApp() {
   Object.values(unsubThreads).forEach(u => u());
   if (fbAuth) fbAuth.signOut().catch(() => {});
   currentUser = null; familyId = null; familyData = {}; threads = {}; customThreads = {};
-  gmailToken = null; calendarToken = null; tasksToken = null; googleConnected = false;
+  googleAccounts = [];
+  sessionStorage.removeItem('toodles_accounts');
   localStorage.removeItem('toodles_family');
   localStorage.removeItem('toodles_threads');
   localStorage.removeItem('toodles_custom_threads');
@@ -573,12 +605,8 @@ function initFirebase() {
     fbAuth = firebase.auth();
     fbDb = firebase.firestore();
     fbAuth.getRedirectResult().then(result => {
-      if (result && result.credential) {
-        gmailToken = result.credential.accessToken;
-        calendarToken = result.credential.accessToken;
-        tasksToken = result.credential.accessToken;
-        saveTokens();
-        googleConnected = true;
+      if (result && result.credential && result.user) {
+        addAccount(result.user.email, result.user.displayName, result.user.photoURL, result.credential.accessToken, true);
         renderSourcePills();
         updateConnectionsUI();
         showToast('Google connected!');
@@ -587,8 +615,10 @@ function initFirebase() {
     fbAuth.onAuthStateChanged(user => {
       currentUser = user;
       if (user) {
-        googleConnected = true;
         restoreTokens();
+        if (!googleAccounts.find(a => a.email === user.email)) {
+          addAccount(user.email, user.displayName, user.photoURL, null, true);
+        }
         findFamily();
         renderSourcePills();
       }
@@ -598,80 +628,122 @@ function initFirebase() {
   }
 }
 
+function makeGoogleProvider() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+  provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
+  provider.addScope('https://www.googleapis.com/auth/tasks.readonly');
+  return provider;
+}
+
 async function connectGoogle() {
   if (!fbAuth) {
-    if (typeof firebase !== 'undefined') {
-      initFirebase();
-    }
+    if (typeof firebase !== 'undefined') initFirebase();
     if (!fbAuth) {
       showToast('Loading Google sign-in... try again in a moment');
       loadFirebaseSDK();
       return;
     }
   }
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-  provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
-  provider.addScope('https://www.googleapis.com/auth/tasks.readonly');
-  try {
-    const result = await fbAuth.signInWithPopup(provider);
-    if (result.credential) {
-      gmailToken = result.credential.accessToken;
-      calendarToken = result.credential.accessToken;
-      tasksToken = result.credential.accessToken;
-      saveTokens();
+  const hasPrimary = googleAccounts.some(a => a.isPrimary);
+  if (!hasPrimary) {
+    const provider = makeGoogleProvider();
+    try {
+      const result = await fbAuth.signInWithPopup(provider);
+      if (result.credential && result.user) {
+        addAccount(result.user.email, result.user.displayName, result.user.photoURL, result.credential.accessToken, true);
+      }
+      renderSourcePills();
+      updateConnectionsUI();
+      showToast('Google connected!');
+    } catch (popupErr) {
+      if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
+        try { await fbAuth.signInWithRedirect(makeGoogleProvider()); } catch (e) { showToast('Sign-in failed: ' + e.message); }
+      } else {
+        showToast('Sign-in failed: ' + popupErr.message);
+      }
     }
-    googleConnected = true;
-    renderSourcePills();
-    updateConnectionsUI();
-    showToast('Google connected!');
-  } catch (popupErr) {
-    if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
-      try { await fbAuth.signInWithRedirect(provider); } catch (e) { showToast('Sign-in failed: ' + e.message); }
-    } else {
-      showToast('Sign-in failed: ' + popupErr.message);
+  } else {
+    const secondaryName = 'toodles_secondary_' + Date.now();
+    let secondApp;
+    try {
+      secondApp = firebase.initializeApp(FB_CONFIG, secondaryName);
+      const secondAuth = secondApp.auth();
+      const provider = makeGoogleProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await secondAuth.signInWithPopup(provider);
+      if (result.credential && result.user) {
+        addAccount(result.user.email, result.user.displayName, result.user.photoURL, result.credential.accessToken, false);
+        showToast(`Added ${result.user.email}`);
+      }
+      await secondAuth.signOut();
+      secondApp.delete();
+      renderSourcePills();
+      updateConnectionsUI();
+    } catch (e) {
+      if (secondApp) secondApp.delete().catch(() => {});
+      if (e.code === 'auth/popup-closed-by-user') return;
+      showToast('Sign-in failed: ' + (e.message || e));
     }
   }
 }
 
-function disconnectGoogle() {
-  if (fbAuth) fbAuth.signOut().catch(() => {});
-  currentUser = null; googleConnected = false;
-  gmailToken = null; calendarToken = null; tasksToken = null;
-  sessionStorage.removeItem('toodles_oauth');
-  if (unsubFamily) { unsubFamily(); unsubFamily = null; }
-  Object.values(unsubThreads).forEach(u => u());
-  unsubThreads = {};
-  familyId = null;
+function disconnectAccount(email) {
+  const acct = googleAccounts.find(a => a.email === email);
+  removeAccount(email);
+  if (acct?.isPrimary) {
+    if (fbAuth) fbAuth.signOut().catch(() => {});
+    currentUser = null;
+    if (unsubFamily) { unsubFamily(); unsubFamily = null; }
+    Object.values(unsubThreads).forEach(u => u());
+    unsubThreads = {};
+    familyId = null;
+  }
   renderSourcePills();
   updateConnectionsUI();
-  showToast('Google disconnected');
+  showToast(`Disconnected ${email}`);
 }
 
-async function getOAuthToken() {
-  if (gmailToken) return gmailToken;
-  restoreTokens();
-  if (gmailToken) return gmailToken;
-  if (!googleConnected || !fbAuth?.currentUser) return null;
-  try {
-    showToast('Reconnecting to Google...');
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-    provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
-    provider.addScope('https://www.googleapis.com/auth/tasks.readonly');
-    provider.setCustomParameters({ prompt: 'consent' });
+async function refreshAccountToken(email) {
+  const acct = googleAccounts.find(a => a.email === email);
+  if (!acct) return null;
+  if (acct.isPrimary && fbAuth?.currentUser) {
     try {
+      const provider = makeGoogleProvider();
+      provider.setCustomParameters({ prompt: 'consent', login_hint: email });
       const result = await fbAuth.currentUser.reauthenticateWithPopup(provider);
-      gmailToken = result.credential?.accessToken;
-      calendarToken = gmailToken;
-      tasksToken = gmailToken;
-      saveTokens();
-      return gmailToken;
-    } catch (popupErr) {
-      try { await fbAuth.signInWithRedirect(provider); } catch(e) {}
-      return null;
+      if (result.credential?.accessToken) {
+        acct.token = result.credential.accessToken;
+        saveTokens();
+        return acct.token;
+      }
+    } catch(e) {}
+  } else {
+    const secondaryName = 'toodles_refresh_' + Date.now();
+    let secondApp;
+    try {
+      secondApp = firebase.initializeApp(FB_CONFIG, secondaryName);
+      const provider = makeGoogleProvider();
+      provider.setCustomParameters({ prompt: 'consent', login_hint: email });
+      const result = await secondApp.auth().signInWithPopup(provider);
+      if (result.credential?.accessToken) {
+        acct.token = result.credential.accessToken;
+        saveTokens();
+      }
+      await secondApp.auth().signOut();
+      secondApp.delete();
+      return acct.token;
+    } catch(e) {
+      if (secondApp) secondApp.delete().catch(() => {});
     }
-  } catch (e) { showToast('Google auth failed — tap 🔗 to reconnect'); return null; }
+  }
+  return null;
+}
+
+async function getAllTokens() {
+  restoreTokens();
+  const tokens = googleAccounts.filter(a => a.token).map(a => ({ email: a.email, token: a.token }));
+  return tokens;
 }
 
 // ════════════════════════════
@@ -848,27 +920,36 @@ function openConnections() {
 
 function updateConnectionsUI() {
   const conns = getConns();
-  const statusEl = document.getElementById('conn-google-status');
-  const btnEl = document.getElementById('conn-google-btn');
+  const listEl = document.getElementById('google-accounts-list');
   const servicesEl = document.getElementById('google-services-section');
+  const addBtn = document.getElementById('conn-add-google');
 
-  if (googleConnected && currentUser) {
-    statusEl.textContent = currentUser.email || 'Connected';
-    statusEl.className = 'conn-status conn-on';
-    btnEl.textContent = 'Disconnect';
-    btnEl.className = 'conn-btn conn-btn-disconnect';
-    btnEl.onclick = disconnectGoogle;
+  if (googleAccounts.length) {
+    listEl.innerHTML = googleAccounts.map(acct => {
+      const initial = (acct.name || acct.email || '?')[0].toUpperCase();
+      const avatar = acct.photo
+        ? `<img src="${acct.photo}" alt="">`
+        : `<div class="acct-placeholder">${initial}</div>`;
+      const badge = acct.isPrimary ? '<span class="acct-badge">Primary</span>' : '';
+      return `<div class="acct-card">
+        ${avatar}
+        <div class="acct-info">
+          <div class="acct-name">${acct.name || 'Google Account'}</div>
+          <div class="acct-email">${acct.email}</div>
+        </div>
+        ${badge}
+        <button class="acct-remove" onclick="disconnectAccount('${acct.email}')" title="Remove">✕</button>
+      </div>`;
+    }).join('');
+    addBtn.textContent = '+ Add Another Google Account';
     servicesEl.style.display = 'block';
     const calSection = document.getElementById('calendar-list-section');
     if (calSection && !calSection.querySelector('.cal-item')) {
       fetchCalendarList();
     }
   } else {
-    statusEl.textContent = 'Not connected';
-    statusEl.className = 'conn-status conn-off';
-    btnEl.textContent = 'Connect Google';
-    btnEl.className = 'conn-btn';
-    btnEl.onclick = connectGoogle;
+    listEl.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-light);font-size:13px">No Google accounts connected</div>';
+    addBtn.textContent = '+ Add Google Account';
     servicesEl.style.display = 'none';
   }
 
@@ -900,69 +981,72 @@ function toggleConnection(type) {
 // ════════════════════════════
 // GMAIL
 // ════════════════════════════
-async function fetchEmails(retried) {
+async function fetchEmails() {
   const conns = getConns();
-  if (conns.gmail === false || !googleConnected) return null;
-  const token = await getOAuthToken();
-  if (!token) return null;
-  try {
-    const listResp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=8&labelIds=INBOX', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    if (listResp.status === 401 && !retried) { gmailToken = null; return fetchEmails(true); }
-    if (!listResp.ok) throw new Error('Gmail API error');
-    const listData = await listResp.json();
-    if (!listData.messages?.length) return 'No new emails in your inbox.';
-    const emails = [];
-    for (const msg of listData.messages.slice(0, 8)) {
-      const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`, {
+  if (conns.gmail === false || !isGoogleConnected()) return null;
+  const accounts = await getAllTokens();
+  if (!accounts.length) return null;
+  let allEmails = [];
+  for (const { email: acctEmail, token } of accounts) {
+    try {
+      const listResp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=8&labelIds=INBOX', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
-      if (!r.ok) continue;
-      const d = await r.json();
-      const headers = {};
-      (d.payload?.headers || []).forEach(h => headers[h.name] = h.value);
-      emails.push(`- From: ${headers.From || '?'}\n  Subject: ${headers.Subject || '(no subject)'}\n  Date: ${headers.Date || '?'}\n  Snippet: ${d.snippet || ''}`);
-    }
-    return 'Here are my recent emails:\n\n' + emails.join('\n\n');
-  } catch (e) {
-    console.error('Gmail fetch error:', e);
-    return null;
+      if (!listResp.ok) continue;
+      const listData = await listResp.json();
+      if (!listData.messages?.length) continue;
+      for (const msg of listData.messages.slice(0, 6)) {
+        const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!r.ok) continue;
+        const d = await r.json();
+        const headers = {};
+        (d.payload?.headers || []).forEach(h => headers[h.name] = h.value);
+        const acctLabel = accounts.length > 1 ? `\n  Account: ${acctEmail}` : '';
+        allEmails.push(`- From: ${headers.From || '?'}\n  Subject: ${headers.Subject || '(no subject)'}\n  Date: ${headers.Date || '?'}${acctLabel}\n  Snippet: ${d.snippet || ''}`);
+      }
+    } catch (e) { console.warn('Gmail fetch error for', acctEmail, e); }
   }
+  if (!allEmails.length) return 'No new emails in your inbox.';
+  return 'Here are my recent emails:\n\n' + allEmails.join('\n\n');
 }
 
 // ════════════════════════════
 // GOOGLE CALENDAR
 // ════════════════════════════
 async function fetchCalendarList() {
-  const token = await getOAuthToken();
-  if (!token) { showToast('Connect Google first'); return; }
-  try {
-    const resp = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    if (!resp.ok) throw new Error('CalendarList API error');
-    const data = await resp.json();
-    const calendars = (data.items || []).filter(c => c.accessRole === 'owner' || c.accessRole === 'writer' || c.accessRole === 'reader');
-    const selectedIds = familyData.selectedCalendars || ['primary'];
-    const container = document.getElementById('calendar-list-items');
-    container.innerHTML = calendars.map(cal => {
-      const checked = selectedIds.includes(cal.id) || (cal.primary && selectedIds.includes('primary'));
-      const color = cal.backgroundColor || '#4285F4';
-      const type = cal.primary ? 'Primary' : (cal.accessRole === 'owner' ? 'Mine' : 'Shared');
-      return `<label class="cal-item" style="cursor:pointer">
-        <span class="cal-dot" style="background:${color}"></span>
-        <span class="cal-name">${cal.summaryOverride || cal.summary}</span>
-        <span class="cal-type">${type}</span>
-        <input type="checkbox" ${checked ? 'checked' : ''} data-cal-id="${cal.id}" onchange="toggleCalendar(this)" style="width:18px;height:18px;accent-color:var(--accent)">
-      </label>`;
-    }).join('');
-    document.getElementById('calendar-list-section').style.display = 'block';
-    showToast(`Found ${calendars.length} calendars`);
-  } catch (e) {
-    console.error('Calendar list error:', e);
-    showToast('Could not load calendars');
+  const accounts = await getAllTokens();
+  if (!accounts.length) { showToast('Connect Google first'); return; }
+  const container = document.getElementById('calendar-list-items');
+  const selectedIds = familyData.selectedCalendars || ['primary'];
+  let allCals = [];
+  for (const { email: acctEmail, token } of accounts) {
+    try {
+      const resp = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      (data.items || []).filter(c => c.accessRole === 'owner' || c.accessRole === 'writer' || c.accessRole === 'reader')
+        .forEach(cal => allCals.push({ ...cal, _acctEmail: acctEmail, _acctToken: token }));
+    } catch (e) { continue; }
   }
+  container.innerHTML = allCals.map(cal => {
+    const checked = selectedIds.includes(cal.id) || (cal.primary && selectedIds.includes('primary'));
+    const color = cal.backgroundColor || '#4285F4';
+    const acctLabel = accounts.length > 1 ? cal._acctEmail.split('@')[0] : '';
+    const type = cal.primary ? 'Primary' : (cal.accessRole === 'owner' ? 'Mine' : 'Shared');
+    const typeLabel = acctLabel ? `${type} · ${acctLabel}` : type;
+    return `<label class="cal-item" style="cursor:pointer">
+      <span class="cal-dot" style="background:${color}"></span>
+      <span class="cal-name">${cal.summaryOverride || cal.summary}</span>
+      <span class="cal-type">${typeLabel}</span>
+      <input type="checkbox" ${checked ? 'checked' : ''} data-cal-id="${cal.id}" onchange="toggleCalendar(this)" style="width:18px;height:18px;accent-color:var(--accent)">
+    </label>`;
+  }).join('');
+  document.getElementById('calendar-list-section').style.display = 'block';
+  showToast(`Found ${allCals.length} calendars`);
 }
 
 function toggleCalendar(checkbox) {
@@ -980,11 +1064,11 @@ function toggleCalendar(checkbox) {
   }
 }
 
-async function fetchCalendarEvents(retried) {
+async function fetchCalendarEvents() {
   const conns = getConns();
-  if (conns.calendar === false || !googleConnected) return null;
-  const token = await getOAuthToken();
-  if (!token) return null;
+  if (conns.calendar === false || !isGoogleConnected()) return null;
+  const accounts = await getAllTokens();
+  if (!accounts.length) return null;
   try {
     const now = new Date();
     const timeMin = now.toISOString();
@@ -993,26 +1077,30 @@ async function fetchCalendarEvents(retried) {
     const timeMax = endDate.toISOString();
     const calIds = familyData.selectedCalendars || ['primary'];
     let allEvents = [];
-    for (const calId of calIds) {
-      try {
-        const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&maxResults=20&singleEvents=true&orderBy=startTime`, {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        if (resp.status === 401 && !retried) { gmailToken = null; calendarToken = null; return fetchCalendarEvents(true); }
-        if (!resp.ok) continue;
-        const data = await resp.json();
-        const calName = data.summary || calId;
-        (data.items || []).forEach(ev => {
-          const start = ev.start?.dateTime ? new Date(ev.start.dateTime) : (ev.start?.date ? new Date(ev.start.date) : null);
-          allEvents.push({ ...ev, _calName: calName, _sortTime: start ? start.getTime() : 0 });
-        });
-      } catch (e) { continue; }
+    for (const { token } of accounts) {
+      for (const calId of calIds) {
+        try {
+          const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&maxResults=20&singleEvents=true&orderBy=startTime`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (!resp.ok) continue;
+          const data = await resp.json();
+          const calName = data.summary || calId;
+          (data.items || []).forEach(ev => {
+            const key = ev.iCalUID || (ev.summary + ev.start?.dateTime);
+            if (allEvents.find(e => (e.iCalUID || (e.summary + e.start?.dateTime)) === key)) return;
+            const start = ev.start?.dateTime ? new Date(ev.start.dateTime) : (ev.start?.date ? new Date(ev.start.date) : null);
+            allEvents.push({ ...ev, _calName: calName, _sortTime: start ? start.getTime() : 0 });
+          });
+        } catch (e) { continue; }
+      }
     }
     if (!allEvents.length) return 'No upcoming events in the next 7 days.';
     allEvents.sort((a, b) => a._sortTime - b._sortTime);
+    const multiCal = calIds.length > 1 || accounts.length > 1;
     const events = allEvents.map(ev => {
       const start = ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : ev.start?.date || '?';
-      const calLabel = calIds.length > 1 ? `\n  Calendar: ${ev._calName}` : '';
+      const calLabel = multiCal ? `\n  Calendar: ${ev._calName}` : '';
       return `- ${ev.summary || '(no title)'}\n  When: ${start}${calLabel}${ev.location ? '\n  Where: ' + ev.location : ''}${ev.description ? '\n  Notes: ' + ev.description.substring(0,100) : ''}`;
     });
     return 'Here are my upcoming calendar events (next 7 days):\n\n' + events.join('\n\n');
@@ -1025,40 +1113,42 @@ async function fetchCalendarEvents(retried) {
 // ════════════════════════════
 // GOOGLE TASKS
 // ════════════════════════════
-async function fetchTasks(retried) {
+async function fetchTasks() {
   const conns = getConns();
-  if (conns.tasks === false || !googleConnected) return null;
-  const token = await getOAuthToken();
-  if (!token) return null;
-  try {
-    const listResp = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    if (listResp.status === 401 && !retried) { gmailToken = null; tasksToken = null; return fetchTasks(true); }
-    if (!listResp.ok) throw new Error('Tasks API error ' + listResp.status);
-    const listData = await listResp.json();
-    if (!listData.items?.length) return 'No task lists found.';
-
-    let allTasks = [];
-    for (const taskList of listData.items.slice(0, 5)) {
-      const tasksResp = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskList.id}/tasks?maxResults=20&showCompleted=false`, {
+  if (conns.tasks === false || !isGoogleConnected()) return null;
+  const accounts = await getAllTokens();
+  if (!accounts.length) return null;
+  let allTasks = [];
+  for (const { email: acctEmail, token } of accounts) {
+    try {
+      const listResp = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
-      if (!tasksResp.ok) continue;
-      const tasksData = await tasksResp.json();
-      if (!tasksData.items?.length) continue;
-      const taskItems = tasksData.items.filter(t => t.title).map(t => {
-        let line = `  - ${t.title}`;
-        if (t.due) line += ` (due: ${new Date(t.due).toLocaleDateString('en-US', { month:'short', day:'numeric' })})`;
-        if (t.notes) line += `\n    Notes: ${t.notes.substring(0, 80)}`;
-        return line;
-      });
-      if (taskItems.length) {
-        allTasks.push(`📋 ${taskList.title}:\n${taskItems.join('\n')}`);
+      if (!listResp.ok) continue;
+      const listData = await listResp.json();
+      if (!listData.items?.length) continue;
+      for (const taskList of listData.items.slice(0, 5)) {
+        const tasksResp = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${taskList.id}/tasks?maxResults=20&showCompleted=false`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!tasksResp.ok) continue;
+        const tasksData = await tasksResp.json();
+        if (!tasksData.items?.length) continue;
+        const taskItems = tasksData.items.filter(t => t.title).map(t => {
+          let line = `  - ${t.title}`;
+          if (t.due) line += ` (due: ${new Date(t.due).toLocaleDateString('en-US', { month:'short', day:'numeric' })})`;
+          if (t.notes) line += `\n    Notes: ${t.notes.substring(0, 80)}`;
+          return line;
+        });
+        if (taskItems.length) {
+          const label = accounts.length > 1 ? `📋 ${taskList.title} (${acctEmail.split('@')[0]})` : `📋 ${taskList.title}`;
+          allTasks.push(`${label}:\n${taskItems.join('\n')}`);
+        }
       }
-    }
-    if (!allTasks.length) return 'No pending tasks found.';
-    return 'Here are your Google Tasks:\n\n' + allTasks.join('\n\n');
+    } catch (e) { console.warn('Tasks fetch error for', acctEmail, e); }
+  }
+  if (!allTasks.length) return 'No pending tasks found.';
+  return 'Here are your Google Tasks:\n\n' + allTasks.join('\n\n');
   } catch (e) {
     console.error('Tasks fetch error:', e);
     return null;
@@ -1165,9 +1255,9 @@ function renderSourcePills() {
   const conns = getConns();
   const pills = document.getElementById('source-pills');
   const sources = [
-    { label:'Gmail', active: conns.gmail !== false && googleConnected },
-    { label:'Calendar', active: conns.calendar !== false && googleConnected },
-    { label:'Tasks', active: conns.tasks !== false && googleConnected },
+    { label:'Gmail', active: conns.gmail !== false && isGoogleConnected() },
+    { label:'Calendar', active: conns.calendar !== false && isGoogleConnected() },
+    { label:'Tasks', active: conns.tasks !== false && isGoogleConnected() },
     { label:'Weather', active: conns.weather !== false && !!familyData?.location },
     { label:'Web Search', active: conns.search !== false },
     { label:'Photos', active: true },
@@ -1229,7 +1319,7 @@ function renderWelcome(threadId) {
     briefing: 'Get up to speed on what\'s happening today and this week — including weather and prep.',
     school: 'Stay on top of school deadlines, permission slips, and events.',
     todos: 'Organize what needs to happen and who should handle what.',
-    remind: `Track reminders and tasks.${googleConnected ? ' I can pull your Google Tasks too.' : ' Connect Google in 🔗 to pull your task list.'}`,
+    remind: `Track reminders and tasks.${isGoogleConnected() ? ' I can pull your Google Tasks too.' : ' Connect Google in 🔗 to pull your task list.'}`,
     share: `Draft messages to share with ${familyData?.partnerName || 'your partner'} — send them right via text.`,
   };
   const bodyText = welcomeTexts[threadId] || meta.hint || 'Start a conversation about ' + (meta.label || 'this topic') + '.';
@@ -1525,13 +1615,13 @@ async function buildSystemPrompt(threadId) {
   let contextBlocks = '';
 
   if (threadId === 'briefing') {
-    if (conns.calendar !== false && googleConnected) {
+    if (conns.calendar !== false && isGoogleConnected()) {
       try {
         const calText = await fetchCalendarEvents();
         if (calText) contextBlocks += '\n\nCALENDAR DATA:\n' + calText;
       } catch(e) {}
     }
-    if (conns.tasks !== false && googleConnected) {
+    if (conns.tasks !== false && isGoogleConnected()) {
       try {
         const tasksText = await fetchTasks();
         if (tasksText) contextBlocks += '\n\nGOOGLE TASKS:\n' + tasksText;
@@ -1543,13 +1633,13 @@ async function buildSystemPrompt(threadId) {
   }
 
   if (threadId === 'remind') {
-    if (conns.calendar !== false && googleConnected) {
+    if (conns.calendar !== false && isGoogleConnected()) {
       try {
         const calText = await fetchCalendarEvents();
         if (calText) contextBlocks += '\n\nUPCOMING CALENDAR EVENTS:\n' + calText;
       } catch(e) {}
     }
-    if (conns.tasks !== false && googleConnected) {
+    if (conns.tasks !== false && isGoogleConnected()) {
       try {
         const tasksText = await fetchTasks();
         if (tasksText) contextBlocks += '\n\nGOOGLE TASKS:\n' + tasksText;
