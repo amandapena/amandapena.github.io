@@ -520,7 +520,7 @@ function restoreTokens() {
 function addAccount(email, name, photo, token, isPrimary) {
   const existing = googleAccounts.findIndex(a => a.email === email);
   if (existing >= 0) {
-    googleAccounts[existing].token = token;
+    if (token) googleAccounts[existing].token = token;
     googleAccounts[existing].name = name || googleAccounts[existing].name;
     googleAccounts[existing].photo = photo || googleAccounts[existing].photo;
   } else {
@@ -710,21 +710,24 @@ async function refreshAccountToken(email) {
   if (acct.isPrimary && fbAuth?.currentUser) {
     try {
       const provider = makeGoogleProvider();
-      provider.setCustomParameters({ prompt: 'consent', login_hint: email });
+      provider.setCustomParameters({ login_hint: email });
       const result = await fbAuth.currentUser.reauthenticateWithPopup(provider);
       if (result.credential?.accessToken) {
         acct.token = result.credential.accessToken;
         saveTokens();
         return acct.token;
       }
-    } catch(e) {}
+    } catch(e) {
+      console.warn('Token refresh failed for', email, e.code || e);
+      showToast('Google session expired — tap Connect to reconnect');
+    }
   } else {
     const secondaryName = 'toodles_refresh_' + Date.now();
     let secondApp;
     try {
       secondApp = firebase.initializeApp(FB_CONFIG, secondaryName);
       const provider = makeGoogleProvider();
-      provider.setCustomParameters({ prompt: 'consent', login_hint: email });
+      provider.setCustomParameters({ login_hint: email });
       const result = await secondApp.auth().signInWithPopup(provider);
       if (result.credential?.accessToken) {
         acct.token = result.credential.accessToken;
@@ -735,6 +738,8 @@ async function refreshAccountToken(email) {
       return acct.token;
     } catch(e) {
       if (secondApp) secondApp.delete().catch(() => {});
+      console.warn('Token refresh failed for', email, e.code || e);
+      showToast('Google session expired — tap Connect to reconnect');
     }
   }
   return null;
@@ -764,6 +769,14 @@ async function googleFetch(url, token, email) {
     const newToken = await refreshAccountToken(email);
     if (newToken) {
       resp = await fetch(url, { headers: { 'Authorization': 'Bearer ' + newToken } });
+    } else {
+      renderSourcePills();
+    }
+  } else if (resp.status === 403) {
+    const data = await resp.clone().json().catch(() => ({}));
+    const reason = data?.error?.errors?.[0]?.reason || '';
+    if (reason === 'accessNotConfigured' || reason === 'forbidden') {
+      console.warn('API not enabled or access denied:', url.split('?')[0], data.error?.message);
     }
   }
   return resp;
@@ -1063,7 +1076,12 @@ async function fetchCalendarList() {
     </label>`;
   }).join('');
   document.getElementById('calendar-list-section').style.display = 'block';
-  showToast(`Found ${allCals.length} calendars`);
+  if (allCals.length) {
+    showToast(`Found ${allCals.length} calendars`);
+  } else {
+    const hasTokens = googleAccounts.some(a => a.token);
+    showToast(hasTokens ? 'No calendars found — try reconnecting Google' : 'Google session expired — tap Connect to reconnect');
+  }
 }
 
 function toggleCalendar(checkbox) {
