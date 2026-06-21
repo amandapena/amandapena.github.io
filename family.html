@@ -1149,10 +1149,6 @@ async function fetchTasks() {
   }
   if (!allTasks.length) return 'No pending tasks found.';
   return 'Here are your Google Tasks:\n\n' + allTasks.join('\n\n');
-  } catch (e) {
-    console.error('Tasks fetch error:', e);
-    return null;
-  }
 }
 
 // ════════════════════════════
