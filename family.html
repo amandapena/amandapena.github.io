@@ -567,7 +567,16 @@ function initFirebase() {
 }
 
 async function connectGoogle() {
-  if (!fbAuth) { showToast('Firebase not loaded'); return; }
+  if (!fbAuth) {
+    if (typeof firebase !== 'undefined') {
+      initFirebase();
+    }
+    if (!fbAuth) {
+      showToast('Loading Google sign-in... try again in a moment');
+      loadFirebaseSDK();
+      return;
+    }
+  }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
   provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
@@ -1442,6 +1451,27 @@ Rules:
 function showToast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2400); }
 function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
 function loadJson(key) { try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; } }
+
+function loadFirebaseSDK() {
+  if (typeof firebase !== 'undefined' && firebase.auth) { initFirebase(); return; }
+  const scripts = [
+    'https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js',
+  ];
+  let i = 0;
+  function loadNext() {
+    if (i >= scripts.length) { initFirebase(); return; }
+    const src = scripts[i++];
+    if (document.querySelector(`script[src="${src}"]`)) { loadNext(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = loadNext;
+    s.onerror = () => showToast('Could not load Google sign-in. Check your connection.');
+    document.head.appendChild(s);
+  }
+  loadNext();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
