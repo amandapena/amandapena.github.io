@@ -184,6 +184,10 @@
     .conn-btn:hover{border-color:var(--accent);color:var(--accent)}
     .conn-btn-disconnect{color:#B91C1C;border-color:#FECACA}
     .conn-btn-disconnect:hover{background:#FEF2F2}
+    .cal-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;background:var(--white);border:1px solid var(--border)}
+    .cal-item .cal-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .cal-item .cal-name{flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .cal-item .cal-type{font-size:10px;color:var(--text-light);flex-shrink:0}
 
     /* Welcome overlay */
     .welcome-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
@@ -352,6 +356,13 @@
           <button class="toggle-switch" id="conn-calendar-toggle" onclick="toggleConnection('calendar')"></button>
         </div>
         <div class="conn-desc">Check upcoming events, flag conflicts, and prep reminders.</div>
+        <div id="calendar-list-section" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:12px;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px">Your Calendars</span>
+            <button class="conn-btn" style="padding:4px 12px;font-size:11px" onclick="fetchCalendarList()">Refresh</button>
+          </div>
+          <div id="calendar-list-items" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
       </div>
 
       <div class="conn-card">
@@ -848,6 +859,10 @@ function updateConnectionsUI() {
     btnEl.className = 'conn-btn conn-btn-disconnect';
     btnEl.onclick = disconnectGoogle;
     servicesEl.style.display = 'block';
+    const calSection = document.getElementById('calendar-list-section');
+    if (calSection && !calSection.querySelector('.cal-item')) {
+      fetchCalendarList();
+    }
   } else {
     statusEl.textContent = 'Not connected';
     statusEl.className = 'conn-status conn-off';
@@ -919,6 +934,52 @@ async function fetchEmails(retried) {
 // ════════════════════════════
 // GOOGLE CALENDAR
 // ════════════════════════════
+async function fetchCalendarList() {
+  const token = await getOAuthToken();
+  if (!token) { showToast('Connect Google first'); return; }
+  try {
+    const resp = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!resp.ok) throw new Error('CalendarList API error');
+    const data = await resp.json();
+    const calendars = (data.items || []).filter(c => c.accessRole === 'owner' || c.accessRole === 'writer' || c.accessRole === 'reader');
+    const selectedIds = familyData.selectedCalendars || ['primary'];
+    const container = document.getElementById('calendar-list-items');
+    container.innerHTML = calendars.map(cal => {
+      const checked = selectedIds.includes(cal.id) || (cal.primary && selectedIds.includes('primary'));
+      const color = cal.backgroundColor || '#4285F4';
+      const type = cal.primary ? 'Primary' : (cal.accessRole === 'owner' ? 'Mine' : 'Shared');
+      return `<label class="cal-item" style="cursor:pointer">
+        <span class="cal-dot" style="background:${color}"></span>
+        <span class="cal-name">${cal.summaryOverride || cal.summary}</span>
+        <span class="cal-type">${type}</span>
+        <input type="checkbox" ${checked ? 'checked' : ''} data-cal-id="${cal.id}" onchange="toggleCalendar(this)" style="width:18px;height:18px;accent-color:var(--accent)">
+      </label>`;
+    }).join('');
+    document.getElementById('calendar-list-section').style.display = 'block';
+    showToast(`Found ${calendars.length} calendars`);
+  } catch (e) {
+    console.error('Calendar list error:', e);
+    showToast('Could not load calendars');
+  }
+}
+
+function toggleCalendar(checkbox) {
+  const calId = checkbox.dataset.calId;
+  let selected = familyData.selectedCalendars || ['primary'];
+  if (checkbox.checked) {
+    if (!selected.includes(calId)) selected.push(calId);
+  } else {
+    selected = selected.filter(id => id !== calId);
+  }
+  familyData.selectedCalendars = selected;
+  localStorage.setItem('toodles_family', JSON.stringify(familyData));
+  if (familyId && fbDb) {
+    fbDb.collection('families').doc(familyId).update({ 'config.selectedCalendars': selected }).catch(() => {});
+  }
+}
+
 async function fetchCalendarEvents(retried) {
   const conns = getConns();
   if (conns.calendar === false || !googleConnected) return null;
@@ -930,16 +991,29 @@ async function fetchCalendarEvents(retried) {
     const endDate = new Date(now);
     endDate.setDate(endDate.getDate() + 7);
     const timeMax = endDate.toISOString();
-    const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&maxResults=20&singleEvents=true&orderBy=startTime`, {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    if (resp.status === 401 && !retried) { gmailToken = null; calendarToken = null; return fetchCalendarEvents(true); }
-    if (!resp.ok) throw new Error('Calendar API error ' + resp.status);
-    const data = await resp.json();
-    if (!data.items?.length) return 'No upcoming events in the next 7 days.';
-    const events = data.items.map(ev => {
+    const calIds = familyData.selectedCalendars || ['primary'];
+    let allEvents = [];
+    for (const calId of calIds) {
+      try {
+        const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&maxResults=20&singleEvents=true&orderBy=startTime`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (resp.status === 401 && !retried) { gmailToken = null; calendarToken = null; return fetchCalendarEvents(true); }
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        const calName = data.summary || calId;
+        (data.items || []).forEach(ev => {
+          const start = ev.start?.dateTime ? new Date(ev.start.dateTime) : (ev.start?.date ? new Date(ev.start.date) : null);
+          allEvents.push({ ...ev, _calName: calName, _sortTime: start ? start.getTime() : 0 });
+        });
+      } catch (e) { continue; }
+    }
+    if (!allEvents.length) return 'No upcoming events in the next 7 days.';
+    allEvents.sort((a, b) => a._sortTime - b._sortTime);
+    const events = allEvents.map(ev => {
       const start = ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : ev.start?.date || '?';
-      return `- ${ev.summary || '(no title)'}\n  When: ${start}\n  ${ev.location ? 'Where: ' + ev.location + '\n  ' : ''}${ev.description ? 'Notes: ' + ev.description.substring(0,100) : ''}`;
+      const calLabel = calIds.length > 1 ? `\n  Calendar: ${ev._calName}` : '';
+      return `- ${ev.summary || '(no title)'}\n  When: ${start}${calLabel}${ev.location ? '\n  Where: ' + ev.location : ''}${ev.description ? '\n  Notes: ' + ev.description.substring(0,100) : ''}`;
     });
     return 'Here are my upcoming calendar events (next 7 days):\n\n' + events.join('\n\n');
   } catch (e) {
