@@ -639,6 +639,14 @@ async function getOAuthToken() {
 // ════════════════════════════
 // FAMILY (Firestore sync — optional)
 // ════════════════════════════
+function mergeConfig(local, remote) {
+  const merged = { ...remote, ...local };
+  for (const key of Object.keys(remote)) {
+    if (!local[key] && remote[key]) merged[key] = remote[key];
+  }
+  return merged;
+}
+
 async function findFamily() {
   if (!fbDb || !currentUser) return;
   try {
@@ -647,8 +655,9 @@ async function findFamily() {
       familyId = snap.docs[0].id;
       const d = snap.docs[0].data();
       if (d.config) {
-        familyData = { ...familyData, ...d.config };
+        familyData = mergeConfig(familyData, d.config);
         localStorage.setItem('toodles_family', JSON.stringify(familyData));
+        fbDb.collection('families').doc(familyId).update({ config: familyData }).catch(() => {});
       }
       if (d.customThreads) customThreads = d.customThreads;
       listenToFamily();
@@ -661,13 +670,14 @@ async function findFamily() {
       familyId = inviteSnap.docs[0].id;
       const d = inviteSnap.docs[0].data();
       if (d.config) {
-        familyData = { ...familyData, ...d.config };
+        familyData = mergeConfig(familyData, d.config);
         localStorage.setItem('toodles_family', JSON.stringify(familyData));
       }
       if (d.customThreads) customThreads = d.customThreads;
       await fbDb.collection('families').doc(familyId).update({
         memberIds: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
         [`members.${currentUser.uid}`]: { name: currentUser.displayName, email: currentUser.email, photo: currentUser.photoURL },
+        config: familyData,
       });
       listenToFamily();
       updateIdentity();
@@ -684,7 +694,7 @@ function listenToFamily() {
     if (!snap.exists) return;
     const d = snap.data();
     if (d.config) {
-      familyData = { ...familyData, ...d.config };
+      familyData = mergeConfig(familyData, d.config);
       localStorage.setItem('toodles_family', JSON.stringify(familyData));
     }
     customThreads = d.customThreads || customThreads;
