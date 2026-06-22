@@ -418,7 +418,10 @@
       <div class="field-group">
         <input class="inp" type="text" id="ss-your-name" placeholder="Your name">
         <input class="inp" type="text" id="ss-kids" placeholder="Kids' names & ages">
-        <input class="inp" type="text" id="ss-partner-phone" placeholder="Partner's phone">
+        <input class="inp" type="text" id="ss-partner-name" placeholder="Partner's name">
+        <input class="inp" type="text" id="ss-partner-email" placeholder="Partner's Google email (to sync)">
+        <input class="inp" type="text" id="ss-partner-phone" placeholder="Partner's phone (for texts)">
+        <input class="inp" type="text" id="ss-your-phone" placeholder="Your phone (for texts)">
         <input class="inp" type="text" id="ss-assistant-name" placeholder="Assistant name (Toodles)">
       </div>
     </div>
@@ -438,6 +441,13 @@
     <div id="ss-custom-threads-section" class="sheet-section" style="display:none">
       <div class="sec-label">Custom Threads</div>
       <div id="ss-custom-threads-list"></div>
+    </div>
+    <div class="sheet-section"><div class="sec-label">SMS Texting</div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text-mid)">
+        <input type="checkbox" id="ss-sms-enabled" style="width:18px;height:18px;accent-color:var(--accent)">
+        Send daily briefing via text at 6am
+      </label>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px">Requires server setup — see functions/ folder</div>
     </div>
     <button class="sheet-action-btn btn-save" onclick="saveSettings()">Save Changes</button>
     <button class="sheet-action-btn btn-secondary" onclick="promptInstall()">📱 Install App on Home Screen</button>
@@ -1823,8 +1833,15 @@ function appendSmsButton(text, persist, threadId) {
   if (persist) getThread(tid).displayLog.push({ type:'sms', text });
   if (tid !== activeThread) return;
   const btn = document.createElement('button'); btn.className = 'sms-btn';
-  btn.innerHTML = 'Send to ' + (familyData?.partnerName || 'partner') + ' via text';
-  btn.onclick = () => { const p = familyData?.partnerPhone || ''; window.location.href = `sms:${p}${p?'&':''}body=${encodeURIComponent(text.substring(0,1000))}`; };
+  btn.innerHTML = '📱 Text to ' + (familyData?.partnerName || 'partner');
+  btn.onclick = () => {
+    const p = familyData?.partnerPhone || '';
+    if (familyData?.smsEnabled && p) {
+      sendTextMessage(p, text.substring(0, 1500));
+    } else {
+      window.location.href = `sms:${p}${p?'&':''}body=${encodeURIComponent(text.substring(0,1000))}`;
+    }
+  };
   document.getElementById('chat-area').appendChild(btn);
   scrollBottom();
 }
@@ -1847,11 +1864,15 @@ function openSettings() {
   document.getElementById('ss-api-key').value = familyData?.apiKey || '';
   document.getElementById('ss-your-name').value = familyData?.yourName || '';
   document.getElementById('ss-kids').value = familyData?.kids || '';
+  document.getElementById('ss-partner-name').value = familyData?.partnerName || '';
+  document.getElementById('ss-partner-email').value = familyData?.partnerEmail || '';
   document.getElementById('ss-partner-phone').value = familyData?.partnerPhone || '';
+  document.getElementById('ss-your-phone').value = familyData?.yourPhone || '';
   document.getElementById('ss-assistant-name').value = familyData?.assistantName || '';
   document.getElementById('ss-location').value = familyData?.location || '';
   document.getElementById('ss-context').value = familyData?.extraContext || '';
   document.getElementById('ss-model').value = familyData?.model || 'claude-sonnet-4-6';
+  document.getElementById('ss-sms-enabled').checked = !!familyData?.smsEnabled;
 
   const customSection = document.getElementById('ss-custom-threads-section');
   const customList = document.getElementById('ss-custom-threads-list');
@@ -1873,21 +1894,46 @@ function openSettings() {
 }
 
 function saveSettings() {
+  const oldPartnerEmail = familyData?.partnerEmail;
   familyData = {
     ...familyData,
     apiKey: document.getElementById('ss-api-key').value.trim() || familyData?.apiKey,
     yourName: document.getElementById('ss-your-name').value.trim(),
     kids: document.getElementById('ss-kids').value.trim(),
+    partnerName: document.getElementById('ss-partner-name').value.trim(),
+    partnerEmail: document.getElementById('ss-partner-email').value.trim(),
     partnerPhone: document.getElementById('ss-partner-phone').value.trim(),
+    yourPhone: document.getElementById('ss-your-phone').value.trim(),
     assistantName: document.getElementById('ss-assistant-name').value.trim() || 'Toodles',
     location: document.getElementById('ss-location').value.trim(),
     extraContext: document.getElementById('ss-context').value.trim(),
     model: document.getElementById('ss-model').value,
+    smsEnabled: document.getElementById('ss-sms-enabled').checked,
   };
   localStorage.setItem('toodles_family', JSON.stringify(familyData));
-  if (familyId && fbDb) {
-    fbDb.collection('families').doc(familyId).update({ config: familyData }).catch(e => showToast('Save error: ' + e.message));
+
+  if (fbDb && currentUser) {
+    if (!familyId) {
+      fbDb.collection('families').add({
+        memberIds: [currentUser.uid],
+        members: { [currentUser.uid]: { name: currentUser.displayName, email: currentUser.email, photo: currentUser.photoURL } },
+        invitedEmail: familyData.partnerEmail || '',
+        config: familyData,
+        customThreads,
+      }).then(doc => {
+        familyId = doc.id;
+        listenToFamily();
+        showToast('Family created — your partner can now sync!');
+      }).catch(e => showToast('Save error: ' + e.message));
+    } else {
+      const update = { config: familyData };
+      if (familyData.partnerEmail && familyData.partnerEmail !== oldPartnerEmail) {
+        update.invitedEmail = familyData.partnerEmail;
+      }
+      fbDb.collection('families').doc(familyId).update(update).catch(e => showToast('Save error: ' + e.message));
+    }
   }
+
   document.getElementById('settings-overlay').classList.add('hidden');
   updateIdentity();
   renderSourcePills();
@@ -2006,6 +2052,30 @@ function loadFirebaseSDK() {
     document.head.appendChild(s);
   }
   loadNext();
+}
+
+// ════════════════════════════
+// SMS (via Cloud Function)
+// ════════════════════════════
+async function sendTextMessage(to, message) {
+  if (!fbAuth?.currentUser) { showToast('Sign in to send texts'); return; }
+  const functionsUrl = familyData?.functionsUrl || `https://us-central1-oh-toodles.cloudfunctions.net`;
+  try {
+    const idToken = await fbAuth.currentUser.getIdToken();
+    const resp = await fetch(`${functionsUrl}/sendText`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, message, idToken }),
+    });
+    const data = await resp.json();
+    if (data.success) {
+      showToast('Text sent!');
+    } else {
+      showToast('Text failed: ' + (data.error || 'unknown error'));
+    }
+  } catch (e) {
+    showToast('Text failed: ' + e.message);
+  }
 }
 
 // ════════════════════════════
