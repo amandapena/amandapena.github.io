@@ -288,7 +288,7 @@
     <div class="input-box"><textarea class="msg-input" id="msg-input" rows="1" placeholder="Message Toodles…"></textarea></div>
     <button class="send-btn" id="send-btn" onclick="sendMessage()" aria-label="Send">↑</button>
   </div>
-  <input type="file" id="image-input" accept="image/*" capture="environment" style="display:none" onchange="handleImageSelect(event)">
+  <input type="file" id="image-input" accept="image/*" style="display:none" onchange="handleImageSelect(event)">
 </div>
 
 <!-- WELCOME OVERLAY -->
@@ -1284,36 +1284,44 @@ function triggerImageUpload() {
 function handleImageSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (!file.type.startsWith('image/')) { showToast('Please select an image'); return; }
+  if (!file.type.startsWith('image/') && !file.name.match(/\.(heic|heif)$/i)) { showToast('Please select an image'); return; }
   if (file.size > 10 * 1024 * 1024) { showToast('Image too large (max 10MB)'); return; }
 
+  showToast('Processing image...');
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      const canvas = document.createElement('canvas');
-      const maxDim = 1200;
-      let w = img.width, h = img.height;
-      if (w > maxDim || h > maxDim) {
-        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      try {
+        const canvas = document.createElement('canvas');
+        const maxDim = 1200;
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        if (!dataUrl || dataUrl.length < 100) { showToast('Failed to process image'); return; }
+        pendingImage = {
+          base64: dataUrl.split(',')[1],
+          mediaType: 'image/jpeg',
+          name: file.name,
+          dataUrl: dataUrl,
+        };
+        showImagePreview();
+        document.getElementById('attach-btn').classList.add('has-image');
+        showToast('Photo ready to send!');
+      } catch (err) {
+        console.error('Image processing error:', err);
+        showToast('Failed to process image — try a smaller photo');
       }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const outType = ['image/png','image/gif','image/webp'].includes(file.type) ? file.type : 'image/jpeg';
-      const quality = outType === 'image/png' ? undefined : 0.82;
-      const dataUrl = canvas.toDataURL(outType, quality);
-      pendingImage = {
-        base64: dataUrl.split(',')[1],
-        mediaType: outType,
-        name: file.name,
-        dataUrl: dataUrl,
-      };
-      showImagePreview();
-      document.getElementById('attach-btn').classList.add('has-image');
     };
+    img.onerror = function() { showToast('Could not load image — try a different photo'); };
     img.src = e.target.result;
   };
+  reader.onerror = function() { showToast('Could not read image file'); };
   reader.readAsDataURL(file);
   event.target.value = '';
 }
@@ -1468,6 +1476,8 @@ async function sendMessage() {
   if (!text && !hasImage) return;
   if (!familyData?.apiKey) { showToast('Add your API key in Settings'); openSettings(); return; }
 
+  const sendThreadId = activeThread;
+
   const ws = document.querySelector('.welcome-state');
   if (ws) ws.remove();
   inputEl.value = ''; inputEl.style.height = 'auto';
@@ -1482,31 +1492,28 @@ async function sendMessage() {
 
   const userTypedText = text;
 
-  // For inbox thread, fetch emails on first message
-  if (activeThread === 'inbox' && getThread('inbox').apiMessages.length === 0) {
+  if (sendThreadId === 'inbox' && getThread('inbox').apiMessages.length === 0) {
     showToast('Fetching your emails...');
     const emailText = await fetchEmails();
     if (emailText) text = emailText + '\n\n---\n\nMy request: ' + (text || 'Summarize my emails');
   }
 
-  // For calendar thread, fetch events on first message
-  if (activeThread === 'calendar' && getThread('calendar').apiMessages.length === 0) {
+  if (sendThreadId === 'calendar' && getThread('calendar').apiMessages.length === 0) {
     showToast('Fetching your calendar...');
     const calText = await fetchCalendarEvents();
     if (calText) text = calText + '\n\n---\n\nMy request: ' + (text || 'What\'s on my calendar?');
   }
 
-  // For remind thread, fetch tasks on first message
-  if (activeThread === 'remind' && getThread('remind').apiMessages.length === 0) {
+  if (sendThreadId === 'remind' && getThread('remind').apiMessages.length === 0) {
     showToast('Fetching your tasks...');
     const tasksText = await fetchTasks();
     if (tasksText) text = tasksText + '\n\n---\n\nMy request: ' + (text || 'What are my reminders and tasks?');
   }
 
-  const thread = getThread(activeThread);
+  const thread = getThread(sendThreadId);
 
-  if (imageForDisplay) appendImageBubble(imageForDisplay, true);
-  if (userTypedText) appendBubbles('user', [userTypedText], true);
+  if (imageForDisplay) appendImageBubble(imageForDisplay, true, sendThreadId);
+  if (userTypedText) appendBubbles('user', [userTypedText], true, false, sendThreadId);
 
   let userContent;
   if (imageBlock) {
@@ -1523,7 +1530,7 @@ async function sendMessage() {
   document.getElementById('send-btn').disabled = true;
 
   try {
-    const systemPrompt = await buildSystemPrompt(activeThread);
+    const systemPrompt = await buildSystemPrompt(sendThreadId);
     const conns = getConns();
     const tools = [];
     if (conns.search !== false) {
@@ -1625,17 +1632,17 @@ async function sendMessage() {
 
     typingEl.remove();
     if (toolActions.length) {
-      appendBubbles('ai', [toolActions.join('\n')], false);
+      appendBubbles('ai', [toolActions.join('\n')], false, false, sendThreadId);
     }
     const replyText = finalText || '(no response)';
-    if (searchQueries.length) appendSearchNote(searchQueries.join(', '), true);
-    appendBubbles('ai', [replyText], true);
-    if (activeThread === 'share' && familyData.partnerPhone) appendSmsButton(replyText, true);
+    if (searchQueries.length) appendSearchNote(searchQueries.join(', '), true, sendThreadId);
+    appendBubbles('ai', [replyText], true, false, sendThreadId);
+    if (sendThreadId === 'share' && familyData.partnerPhone) appendSmsButton(replyText, true, sendThreadId);
     if (thread.apiMessages.length > 50) thread.apiMessages = thread.apiMessages.slice(-50);
-    saveThread(activeThread);
+    saveThread(sendThreadId);
   } catch (err) {
     typingEl.remove();
-    appendBubbles('ai', [`Error: ${err.message}\n\nCheck your API key in Settings.`], true, true);
+    appendBubbles('ai', [`Error: ${err.message}\n\nCheck your API key in Settings.`], true, true, sendThreadId);
   }
   isLoading = false;
   document.getElementById('send-btn').disabled = false;
@@ -1660,9 +1667,12 @@ function renderMarkdown(text) {
   return html;
 }
 
-function appendBubbles(role, texts, scroll, isError) {
+function appendBubbles(role, texts, scroll, isError, threadId) {
+  const tid = threadId || activeThread;
+  const thread = getThread(tid);
+  if (scroll !== false) { thread.displayLog.push({ type:'bubble', role, texts:[...texts], isError }); }
+  if (tid !== activeThread) return;
   const chatArea = document.getElementById('chat-area');
-  const thread = getThread(activeThread);
   const group = document.createElement('div');
   group.className = `msg-group ${role}`; group.dataset.role = role;
   if (role === 'ai') {
@@ -1683,10 +1693,13 @@ function appendBubbles(role, texts, scroll, isError) {
     group.appendChild(el);
   });
   chatArea.appendChild(group);
-  if (scroll !== false) { thread.displayLog.push({ type:'bubble', role, texts:[...texts], isError }); scrollBottom(); }
+  if (scroll !== false) scrollBottom();
 }
 
-function appendImageBubble(dataUrl, persist) {
+function appendImageBubble(dataUrl, persist, threadId) {
+  const tid = threadId || activeThread;
+  if (persist) getThread(tid).displayLog.push({ type:'image', dataUrl });
+  if (tid !== activeThread) return;
   const chatArea = document.getElementById('chat-area');
   const group = document.createElement('div');
   group.className = 'msg-group user';
@@ -1696,23 +1709,26 @@ function appendImageBubble(dataUrl, persist) {
   img.src = dataUrl; img.className = 'msg-image'; img.alt = 'Uploaded photo';
   group.appendChild(img);
   chatArea.appendChild(group);
-  if (persist) getThread(activeThread).displayLog.push({ type:'image', dataUrl });
   scrollBottom();
 }
 
-function appendSearchNote(query, persist) {
+function appendSearchNote(query, persist, threadId) {
+  const tid = threadId || activeThread;
+  if (persist) getThread(tid).displayLog.push({ type:'search', query });
+  if (tid !== activeThread) return;
   const el = document.createElement('div'); el.className = 'search-note';
   el.textContent = 'Searched: ' + query;
   document.getElementById('chat-area').appendChild(el);
-  if (persist) getThread(activeThread).displayLog.push({ type:'search', query });
 }
 
-function appendSmsButton(text, persist) {
+function appendSmsButton(text, persist, threadId) {
+  const tid = threadId || activeThread;
+  if (persist) getThread(tid).displayLog.push({ type:'sms', text });
+  if (tid !== activeThread) return;
   const btn = document.createElement('button'); btn.className = 'sms-btn';
   btn.innerHTML = 'Send to ' + (familyData?.partnerName || 'partner') + ' via text';
   btn.onclick = () => { const p = familyData?.partnerPhone || ''; window.location.href = `sms:${p}${p?'&':''}body=${encodeURIComponent(text.substring(0,1000))}`; };
   document.getElementById('chat-area').appendChild(btn);
-  if (persist) getThread(activeThread).displayLog.push({ type:'sms', text });
   scrollBottom();
 }
 
