@@ -591,6 +591,7 @@ function resetApp() {
   localStorage.removeItem('toodles_threads');
   localStorage.removeItem('toodles_custom_threads');
   localStorage.removeItem('toodles_welcome_seen');
+  localStorage.removeItem('toodles_last_briefing');
   document.getElementById('settings-overlay').classList.add('hidden');
   showScreen('start-screen');
 }
@@ -1357,6 +1358,96 @@ function showApp() {
     const tabs = document.getElementById('thread-tabs');
     if (tabs && !tabs.children.length) renderThreadTabs();
   }, 100);
+  setTimeout(checkAutoBriefing, 2000);
+  scheduleBriefingCheck();
+}
+
+function checkAutoBriefing() {
+  if (!familyData?.apiKey) return;
+  const now = new Date();
+  const hour = now.getHours();
+  if (hour < 6) return;
+  const todayKey = now.toISOString().split('T')[0];
+  const lastBriefing = localStorage.getItem('toodles_last_briefing');
+  if (lastBriefing === todayKey) return;
+  localStorage.setItem('toodles_last_briefing', todayKey);
+  triggerAutoBriefing();
+}
+
+async function triggerAutoBriefing() {
+  const briefingThread = getThread('briefing');
+  briefingThread.apiMessages = [];
+  briefingThread.displayLog = [];
+
+  const prevThread = activeThread;
+  switchThread('briefing');
+
+  const ws = document.querySelector('.welcome-state');
+  if (ws) ws.remove();
+
+  const sendThreadId = 'briefing';
+  const thread = getThread(sendThreadId);
+  const text = 'Good morning! Give me my daily briefing.';
+
+  appendBubbles('user', [text], true, false, sendThreadId);
+  thread.apiMessages.push({ role: 'user', content: text });
+
+  const typingEl = showTyping();
+  isLoading = true;
+  document.getElementById('send-btn').disabled = true;
+
+  try {
+    const systemPrompt = await buildSystemPrompt(sendThreadId);
+    const conns = getConns();
+    const tools = [];
+    if (conns.search !== false) {
+      tools.push({ type: 'web_search_20250305', name: 'web_search', max_uses: 5 });
+    }
+    const reqBody = {
+      model: familyData.model || 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: thread.apiMessages,
+    };
+    if (tools.length) reqBody.tools = tools;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': familyData.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify(reqBody),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    typingEl.remove();
+
+    let replyParts = [], searchQueries = [];
+    for (const block of data.content) {
+      if (block.type === 'text' && block.text) replyParts.push(block.text);
+      else if (block.type === 'web_search_tool_use') searchQueries.push(block.input?.query || 'web');
+    }
+    const replyText = replyParts.join('\n\n') || '(no response)';
+    if (searchQueries.length) appendSearchNote(searchQueries.join(', '), true, sendThreadId);
+    appendBubbles('ai', [replyText], true, false, sendThreadId);
+    thread.apiMessages.push({ role: 'assistant', content: data.content });
+    saveThread(sendThreadId);
+    showToast('Your daily briefing is ready!');
+  } catch (err) {
+    typingEl.remove();
+    appendBubbles('ai', [`Briefing error: ${err.message}`], true, true, sendThreadId);
+  }
+  isLoading = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+function scheduleBriefingCheck() {
+  setInterval(() => {
+    checkAutoBriefing();
+  }, 15 * 60 * 1000);
 }
 
 function updateIdentity() {
