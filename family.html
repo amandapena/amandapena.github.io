@@ -646,10 +646,15 @@ async function connectGoogle() {
       return;
     }
   }
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const hasPrimary = googleAccounts.some(a => a.isPrimary);
   if (!hasPrimary) {
     const provider = makeGoogleProvider();
     provider.setCustomParameters({ prompt: 'consent', include_granted_scopes: 'true' });
+    if (isMobile) {
+      try { await fbAuth.signInWithRedirect(provider); } catch (e) { showToast('Sign-in failed: ' + e.message); }
+      return;
+    }
     try {
       const result = await fbAuth.signInWithPopup(provider);
       const token = extractOAuthToken(result);
@@ -661,7 +666,7 @@ async function connectGoogle() {
       updateConnectionsUI();
     } catch (popupErr) {
       if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
-        try { await fbAuth.signInWithRedirect(makeGoogleProvider()); } catch (e) { showToast('Sign-in failed: ' + e.message); }
+        try { await fbAuth.signInWithRedirect(provider); } catch (e) { showToast('Sign-in failed: ' + e.message); }
       } else {
         showToast('Sign-in failed: ' + popupErr.message);
       }
@@ -673,7 +678,11 @@ async function connectGoogle() {
       secondApp = firebase.initializeApp(FB_CONFIG, secondaryName);
       const secondAuth = secondApp.auth();
       const provider = makeGoogleProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
+      provider.setCustomParameters({ prompt: 'select_account', include_granted_scopes: 'true' });
+      if (isMobile) {
+        await secondAuth.signInWithRedirect(provider);
+        return;
+      }
       const result = await secondAuth.signInWithPopup(provider);
       const token = extractOAuthToken(result);
       if (result.user) {
