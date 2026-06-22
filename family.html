@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Family AI planning assistant with shared conversations and email integration.">
-  <meta name="theme-color" content="#F7F2EB">
+  <meta name="theme-color" content="#E8A87C">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="/toodles-manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐔</text></svg>">
   <title>Toodles — Family Planner</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -438,6 +440,8 @@
       <div id="ss-custom-threads-list"></div>
     </div>
     <button class="sheet-action-btn btn-save" onclick="saveSettings()">Save Changes</button>
+    <button class="sheet-action-btn btn-secondary" onclick="promptInstall()">📱 Install App on Home Screen</button>
+    <button class="sheet-action-btn btn-secondary" onclick="requestNotificationPermission(); showToast('Notification permission requested')">🔔 Enable Notifications</button>
     <button class="sheet-action-btn btn-danger" onclick="clearThread()">Clear this thread</button>
     <button class="sheet-action-btn btn-secondary" onclick="resetApp()">Sign out / Reset</button>
   </div>
@@ -1359,6 +1363,7 @@ function showApp() {
     if (tabs && !tabs.children.length) renderThreadTabs();
   }, 100);
   setTimeout(checkAutoBriefing, 2000);
+  setTimeout(requestNotificationPermission, 5000);
   scheduleBriefingCheck();
 }
 
@@ -1436,6 +1441,7 @@ async function triggerAutoBriefing() {
     thread.apiMessages.push({ role: 'assistant', content: data.content });
     saveThread(sendThreadId);
     showToast('Your daily briefing is ready!');
+    sendNotification('Good morning! ☀️', 'Your daily briefing from Toodles is ready.');
   } catch (err) {
     typingEl.remove();
     appendBubbles('ai', [`Briefing error: ${err.message}`], true, true, sendThreadId);
@@ -2002,10 +2008,60 @@ function loadFirebaseSDK() {
   loadNext();
 }
 
+// ════════════════════════════
+// NOTIFICATIONS & PWA
+// ════════════════════════════
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/toodles-sw.js').catch(e => console.warn('SW registration failed:', e));
+  }
+}
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function sendNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    if (navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+          body,
+          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🐔</text></svg>',
+          badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🐔</text></svg>',
+          tag: 'toodles-briefing',
+          renotify: true,
+        });
+      });
+    } else {
+      new Notification(title, { body });
+    }
+  } catch (e) {
+    console.warn('Notification failed:', e);
+  }
+}
+
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; });
+
+function promptInstall() {
+  if (installPrompt) {
+    installPrompt.prompt();
+    installPrompt = null;
+  } else {
+    showToast('Open browser menu → "Add to Home Screen"');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
   input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 110) + 'px'; });
   input.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+  registerServiceWorker();
   init();
 });
 </script>
