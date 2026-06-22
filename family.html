@@ -605,11 +605,12 @@ function initFirebase() {
     fbAuth = firebase.auth();
     fbDb = firebase.firestore();
     fbAuth.getRedirectResult().then(result => {
-      if (result && result.credential && result.user) {
-        addAccount(result.user.email, result.user.displayName, result.user.photoURL, result.credential.accessToken, true);
+      if (result?.user) {
+        const token = extractOAuthToken(result);
+        addAccount(result.user.email, result.user.displayName, result.user.photoURL, token, true);
         renderSourcePills();
         updateConnectionsUI();
-        showToast('Google connected!');
+        showToast(token ? 'Google connected!' : 'Signed in but no API access');
       }
     }).catch(e => console.warn('Redirect result error:', e));
     fbAuth.onAuthStateChanged(user => {
@@ -650,12 +651,13 @@ async function connectGoogle() {
     const provider = makeGoogleProvider();
     try {
       const result = await fbAuth.signInWithPopup(provider);
-      if (result.credential && result.user) {
-        addAccount(result.user.email, result.user.displayName, result.user.photoURL, result.credential.accessToken, true);
+      const token = extractOAuthToken(result);
+      if (result.user) {
+        addAccount(result.user.email, result.user.displayName, result.user.photoURL, token, true);
+        showToast(token ? 'Google connected!' : 'Signed in but no API access — try disconnecting and reconnecting');
       }
       renderSourcePills();
       updateConnectionsUI();
-      showToast('Google connected!');
     } catch (popupErr) {
       if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
         try { await fbAuth.signInWithRedirect(makeGoogleProvider()); } catch (e) { showToast('Sign-in failed: ' + e.message); }
@@ -672,9 +674,10 @@ async function connectGoogle() {
       const provider = makeGoogleProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       const result = await secondAuth.signInWithPopup(provider);
-      if (result.credential && result.user) {
-        addAccount(result.user.email, result.user.displayName, result.user.photoURL, result.credential.accessToken, false);
-        showToast(`Added ${result.user.email}`);
+      const token = extractOAuthToken(result);
+      if (result.user) {
+        addAccount(result.user.email, result.user.displayName, result.user.photoURL, token, false);
+        showToast(token ? `Added ${result.user.email}` : 'Signed in but no API access');
       }
       await secondAuth.signOut();
       secondApp.delete();
@@ -704,6 +707,15 @@ function disconnectAccount(email) {
   showToast(`Disconnected ${email}`);
 }
 
+function extractOAuthToken(result) {
+  let token = result.credential?.accessToken;
+  if (!token) {
+    const oauthCred = firebase.auth.GoogleAuthProvider.credentialFromResult?.(result);
+    token = oauthCred?.accessToken;
+  }
+  return token || null;
+}
+
 async function refreshAccountToken(email) {
   const acct = googleAccounts.find(a => a.email === email);
   if (!acct) return null;
@@ -712,10 +724,11 @@ async function refreshAccountToken(email) {
       const provider = makeGoogleProvider();
       provider.setCustomParameters({ login_hint: email });
       const result = await fbAuth.currentUser.reauthenticateWithPopup(provider);
-      if (result.credential?.accessToken) {
-        acct.token = result.credential.accessToken;
+      const token = extractOAuthToken(result);
+      if (token) {
+        acct.token = token;
         saveTokens();
-        return acct.token;
+        return token;
       }
     } catch(e) {
       console.warn('Token refresh failed for', email, e.code || e);
@@ -729,8 +742,9 @@ async function refreshAccountToken(email) {
       const provider = makeGoogleProvider();
       provider.setCustomParameters({ login_hint: email });
       const result = await secondApp.auth().signInWithPopup(provider);
-      if (result.credential?.accessToken) {
-        acct.token = result.credential.accessToken;
+      const token = extractOAuthToken(result);
+      if (token) {
+        acct.token = token;
         saveTokens();
       }
       await secondApp.auth().signOut();
@@ -1054,13 +1068,19 @@ async function fetchCalendarList() {
   const selectedIds = familyData.selectedCalendars || ['primary'];
   let allCals = [];
   for (const { email: acctEmail, token } of accounts) {
+    if (!token) { console.warn('No token for', acctEmail); continue; }
     try {
       const resp = await googleFetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', token, acctEmail);
-      if (!resp.ok) continue;
+      if (!resp.ok) {
+        const errText = await resp.text().catch(() => '');
+        console.warn('Calendar API error', resp.status, 'for', acctEmail, errText);
+        if (resp.status === 403) showToast('Calendar API may not be enabled in Google Cloud Console');
+        continue;
+      }
       const data = await resp.json();
       (data.items || []).filter(c => c.accessRole === 'owner' || c.accessRole === 'writer' || c.accessRole === 'reader')
         .forEach(cal => allCals.push({ ...cal, _acctEmail: acctEmail, _acctToken: token }));
-    } catch (e) { continue; }
+    } catch (e) { console.warn('Calendar list fetch error:', e); continue; }
   }
   container.innerHTML = allCals.map(cal => {
     const checked = selectedIds.includes(cal.id) || (cal.primary && selectedIds.includes('primary'));
