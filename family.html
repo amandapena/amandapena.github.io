@@ -632,8 +632,8 @@ function initFirebase() {
 function makeGoogleProvider() {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-  provider.addScope('https://www.googleapis.com/auth/calendar.readonly');
-  provider.addScope('https://www.googleapis.com/auth/tasks.readonly');
+  provider.addScope('https://www.googleapis.com/auth/calendar.events');
+  provider.addScope('https://www.googleapis.com/auth/tasks');
   return provider;
 }
 
@@ -1201,6 +1201,69 @@ async function fetchTasks() {
 }
 
 // ════════════════════════════
+// CALENDAR & TASKS WRITE
+// ════════════════════════════
+async function createCalendarEvent({ summary, start_time, end_time, description, location }) {
+  const accounts = await getAllTokens();
+  const primary = accounts.find(a => googleAccounts.find(g => g.email === a.email && g.isPrimary)) || accounts[0];
+  if (!primary) return { error: 'No Google account connected' };
+  const event = { summary };
+  if (description) event.description = description;
+  if (location) event.location = location;
+  const isAllDay = !start_time.includes('T');
+  if (isAllDay) {
+    event.start = { date: start_time };
+    event.end = { date: end_time || start_time };
+  } else {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    event.start = { dateTime: start_time, timeZone: tz };
+    event.end = { dateTime: end_time || new Date(new Date(start_time).getTime() + 3600000).toISOString(), timeZone: tz };
+  }
+  const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + primary.token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(event),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    return { error: err.error?.message || `HTTP ${resp.status}` };
+  }
+  const created = await resp.json();
+  return { success: true, event_id: created.id, summary: created.summary, start: created.start, link: created.htmlLink };
+}
+
+async function createTask({ title, notes, due_date, task_list }) {
+  const accounts = await getAllTokens();
+  const primary = accounts.find(a => googleAccounts.find(g => g.email === a.email && g.isPrimary)) || accounts[0];
+  if (!primary) return { error: 'No Google account connected' };
+  let listId = '@default';
+  if (task_list) {
+    const listResp = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
+      headers: { 'Authorization': 'Bearer ' + primary.token },
+    });
+    if (listResp.ok) {
+      const lists = await listResp.json();
+      const match = (lists.items || []).find(l => l.title.toLowerCase().includes(task_list.toLowerCase()));
+      if (match) listId = match.id;
+    }
+  }
+  const task = { title };
+  if (notes) task.notes = notes;
+  if (due_date) task.due = new Date(due_date + 'T00:00:00').toISOString();
+  const resp = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks`, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + primary.token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(task),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    return { error: err.error?.message || `HTTP ${resp.status}` };
+  }
+  const created = await resp.json();
+  return { success: true, task_id: created.id, title: created.title };
+}
+
+// ════════════════════════════
 // IMAGE UPLOAD
 // ════════════════════════════
 function triggerImageUpload() {
@@ -1451,40 +1514,111 @@ async function sendMessage() {
   try {
     const systemPrompt = await buildSystemPrompt(activeThread);
     const conns = getConns();
-    const reqBody = {
-      model: familyData.model || 'claude-sonnet-4-6',
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: thread.apiMessages,
-    };
+    const tools = [];
     if (conns.search !== false) {
-      reqBody.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
+      tools.push({ type: 'web_search_20250305', name: 'web_search', max_uses: 5 });
     }
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': familyData.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify(reqBody),
-    });
-    if (!resp.ok) {
-      const errData = await resp.json().catch(() => ({}));
-      throw new Error(errData.error?.message || `HTTP ${resp.status}`);
+    if (conns.calendar !== false && isGoogleConnected()) {
+      tools.push({
+        name: 'create_calendar_event',
+        description: 'Create a new event on the user\'s primary Google Calendar. Use this whenever the user asks to add, schedule, or create a calendar event.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            summary: { type: 'string', description: 'Event title' },
+            start_time: { type: 'string', description: 'Start time in ISO 8601 format (e.g. "2025-06-25T09:00:00" for timed, "2025-06-25" for all-day)' },
+            end_time: { type: 'string', description: 'End time in ISO 8601 format. Omit for 1-hour default or all-day events.' },
+            description: { type: 'string', description: 'Event description/notes' },
+            location: { type: 'string', description: 'Event location' },
+          },
+          required: ['summary', 'start_time'],
+        },
+      });
     }
-    const data = await resp.json();
+    if (conns.tasks !== false && isGoogleConnected()) {
+      tools.push({
+        name: 'create_task',
+        description: 'Create a new task in Google Tasks. Use this when the user asks to add a to-do, reminder, or task.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Task title' },
+            notes: { type: 'string', description: 'Additional details' },
+            due_date: { type: 'string', description: 'Due date in YYYY-MM-DD format' },
+            task_list: { type: 'string', description: 'Name of the task list (defaults to primary list)' },
+          },
+          required: ['title'],
+        },
+      });
+    }
+
+    let messages = [...thread.apiMessages];
+    let finalText = '';
+    let searchQueries = [];
+    let toolActions = [];
+    let loops = 0;
+
+    while (loops < 5) {
+      loops++;
+      const reqBody = {
+        model: familyData.model || 'claude-sonnet-4-6',
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages,
+      };
+      if (tools.length) reqBody.tools = tools;
+
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': familyData.apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify(reqBody),
+      });
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error?.message || `HTTP ${resp.status}`);
+      }
+      const data = await resp.json();
+
+      for (const block of data.content) {
+        if (block.type === 'text' && block.text) finalText += (finalText ? '\n\n' : '') + block.text;
+        else if (block.type === 'web_search_tool_use') searchQueries.push(block.input?.query || 'web');
+      }
+
+      if (data.stop_reason !== 'tool_use') {
+        thread.apiMessages.push({ role: 'assistant', content: data.content });
+        break;
+      }
+
+      messages.push({ role: 'assistant', content: data.content });
+      const toolResults = [];
+      for (const block of data.content) {
+        if (block.type === 'tool_use') {
+          let result;
+          if (block.name === 'create_calendar_event') {
+            result = await createCalendarEvent(block.input);
+            if (result.success) toolActions.push(`📅 Added "${block.input.summary}" to calendar`);
+          } else if (block.name === 'create_task') {
+            result = await createTask(block.input);
+            if (result.success) toolActions.push(`✅ Added task "${block.input.title}"`);
+          } else { result = { error: 'Unknown tool' }; }
+          toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) });
+        }
+      }
+      messages.push({ role: 'user', content: toolResults });
+    }
+
     typingEl.remove();
-    let replyParts = [], searchQueries = [];
-    for (const block of data.content) {
-      if (block.type === 'text' && block.text) replyParts.push(block.text);
-      else if (block.type === 'web_search_tool_use') searchQueries.push(block.input?.query || 'web');
+    if (toolActions.length) {
+      appendBubbles('ai', [toolActions.join('\n')], false);
     }
-    const replyText = replyParts.join('\n\n') || '(no response)';
+    const replyText = finalText || '(no response)';
     if (searchQueries.length) appendSearchNote(searchQueries.join(', '), true);
     appendBubbles('ai', [replyText], true);
-    thread.apiMessages.push({ role: 'assistant', content: data.content });
     if (activeThread === 'share' && familyData.partnerPhone) appendSmsButton(replyText, true);
     if (thread.apiMessages.length > 50) thread.apiMessages = thread.apiMessages.slice(-50);
     saveThread(activeThread);
@@ -1715,7 +1849,11 @@ Rules:
 - When reviewing a calendar, flag conflicts, things to prepare, and reminders
 - When reviewing tasks/reminders, organize by priority and highlight overdue items
 - When a user sends a photo of a calendar or schedule, carefully extract ALL dates, events, and details
-- If location is known and this is a briefing or planning context, consider weather in your advice (e.g., pack raincoats, sunscreen)`;
+- If location is known and this is a briefing or planning context, consider weather in your advice (e.g., pack raincoats, sunscreen)
+- You CAN create Google Calendar events using the create_calendar_event tool — do it when asked to add/schedule events
+- You CAN create Google Tasks using the create_task tool — do it when asked to add to-dos or reminders
+- When creating multiple events or tasks, create them all (use the tools multiple times)
+- After creating events/tasks, confirm what you added with the details`;
 }
 
 // ════════════════════════════
