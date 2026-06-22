@@ -632,7 +632,7 @@ function initFirebase() {
 function makeGoogleProvider() {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-  provider.addScope('https://www.googleapis.com/auth/calendar.events');
+  provider.addScope('https://www.googleapis.com/auth/calendar');
   provider.addScope('https://www.googleapis.com/auth/tasks');
   return provider;
 }
@@ -649,7 +649,7 @@ async function connectGoogle() {
   const hasPrimary = googleAccounts.some(a => a.isPrimary);
   if (!hasPrimary) {
     const provider = makeGoogleProvider();
-    provider.setCustomParameters({ prompt: 'consent' });
+    provider.setCustomParameters({ prompt: 'consent', include_granted_scopes: 'true' });
     try {
       const result = await fbAuth.signInWithPopup(provider);
       const token = extractOAuthToken(result);
@@ -703,6 +703,7 @@ function disconnectAccount(email) {
     unsubThreads = {};
     familyId = null;
   }
+  if (!googleAccounts.length) sessionStorage.removeItem('toodles_accounts');
   renderSourcePills();
   updateConnectionsUI();
   showToast(`Disconnected ${email}`);
