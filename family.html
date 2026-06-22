@@ -649,6 +649,7 @@ async function connectGoogle() {
   const hasPrimary = googleAccounts.some(a => a.isPrimary);
   if (!hasPrimary) {
     const provider = makeGoogleProvider();
+    provider.setCustomParameters({ prompt: 'consent' });
     try {
       const result = await fbAuth.signInWithPopup(provider);
       const token = extractOAuthToken(result);
